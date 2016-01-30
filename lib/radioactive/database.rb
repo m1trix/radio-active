@@ -11,13 +11,12 @@ module Radioactive
     end
 
     def select(sql, result = nil, &block)
-      handle(block) do |handler|
+      handle(block, result) do |handler|
         DBI.connect(DB[:driver], DB[:user], DB[:password]) do |connection|
           connection.select_all(sql) do |row|
-            result = handler.on_success(row, result)
+            handler.on_success(row)
           end
         end
-        result
       end
     end
 
@@ -31,11 +30,11 @@ module Radioactive
 
     protected
 
-    def handle(block)
+    def handle(block, result = nil)
       begin
-        handler = Handler.new
-        handler.bind(block)
+        handler = Handler.new(block, result)
         yield handler
+        handler.result
       rescue DBI::Error => e
         handler.on_error(e)
       end
@@ -46,7 +45,7 @@ end
 module Radioactive
   class Database
     ERRORS = {
-      duplicate_key: 1061,
+      duplicate_key: 1062,
       table_already_exists: 1050,
       table_doesnt_exist: 1146
     }
@@ -58,65 +57,57 @@ module Radioactive
     SUCCESS = [:condition]
 
     class Handler
-      def initialize
+      attr_reader :result
+
+      def initialize(block, result)
         @ongoing = :none
-        @cath = :none
+        @handle = :none
+        @block = block
+        @result = result
       end
 
       def error(code = :all)
-        if @catch == :error
-          @ongoing = (code or :all)
+        if (@handle == :error) and error_code?(code || :all)
+          yield
         end
       end
 
-      def always
-        @ongoing = :always if @catch == :success
-      end
-
-      def condition(predicate)
-        if (@catch == :success) and predicate
-          @ongoing = :condition
+      def on(expression, &block)
+        if (@handle == :success) and expression
+          apply(&block)
         end
       end
 
-      def raises(exception = nil, message)
-        return unless @ongoing
-        if (@ongoing == :all) or (@ongoing == :condition) or expected_error
-          raise(exception, message) if exception
-          raise message
-        end
+      def handle(&block)
+        apply(&block) if @handle == :success
       end
 
-      def result(&block)
-        unless @ongoing == :none
-          @result = @result.instance_eval(&block)
-          @ongoing = :none
-        end
-      end
-
-      def bind(block)
-        @block = block
-      end
 
       def on_error(error)
-        @catch = :error
+        @handle = :error
         @error = error
+
         instance_eval(&@block) if @block
         raise error
       end
 
-      def on_success(row, result)
-        @catch = :success
-        @result = result
+      def on_success(row)
+        @handle = :success
         instance_exec(row, &@block) if @block
-        @result
       end
 
       protected
 
-      def expected_error
-        return false unless @error.is_a? DBI::DatabaseError
-        ERRORS[@ongoing] == @error.err
+      def error_code?(code)
+        return true if code == :all
+        return false unless @error.is_a?(DBI::DatabaseError)
+        ERRORS[code] == @error.err
+      end
+
+      def apply
+        if block_given?
+          @result = (yield @result)
+        end
       end
     end
   end

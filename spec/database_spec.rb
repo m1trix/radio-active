@@ -38,8 +38,9 @@ describe Radioactive::Database do
 
       expect(
         @db.select("SELECT VALUE FROM TEST WHERE NAME LIKE 'reason'") do |row|
-          always
-          result { row[0] }
+          handle do
+            row[0]
+          end
         end
       ).to eq 'test'
     end
@@ -53,8 +54,7 @@ describe Radioactive::Database do
 
       expect(
         @db.select('SELECT VALUE FROM TEST', []) do |row|
-          always
-          result { push row[0] }
+          handle { result.push row[0] }
         end
       ).to eq %w(test improvement)
     end
@@ -69,8 +69,9 @@ describe Radioactive::Database do
 
       expect do
         @db.execute(sql) do
-          error :table_already_exists
-          raises 'The table is already there!'
+          error(:table_already_exists) do
+            raise 'The table is already there!'
+          end
         end
       end.to raise_error('The table is already there!')
     end
@@ -78,31 +79,37 @@ describe Radioactive::Database do
     it 'can handle all errors' do
       expect do
         @db.select('SELECT * FROM UNKNOWN') do
-          error :table_already_exists
-          raises 'This is not the expected error'
+          error(:table_already_exists) do
+            raise 'This is not the expected error'
+          end
 
-          error
-          raises 'All is rescued'
+          error do
+            raise 'All is rescued'
+          end
         end
       end.to raise_error 'All is rescued'
 
       expect do
         @db.select('SELECT * FROM UNKNOWN') do
-          error :table_doesnt_exist
-          raises 'This goes first'
+          error(:table_doesnt_exist) do
+            raise 'This goes first'
+          end
 
-          error
-          raises 'All is rescued'
+          error do
+            raise 'All is rescued'
+          end
         end
       end.to raise_error 'This goes first'
 
       expect do
         @db.select('SELECT * FROM UNKNOWN') do
-          error
-          raises 'The order matters'
+          error do
+            raise 'The order matters'
+          end
 
-          error :table_doesnt_exist
-          raises 'This goes first'
+          error(:table_doesnt_exist) do
+            raise 'This goes first'
+          end
         end
       end.to raise_error 'The order matters'
     end
@@ -118,24 +125,21 @@ describe Radioactive::Database do
       expect do
         # This will not happen in case of error
         result = @db.select('SELECT VALUE FROM TEST', []) do |row|
-          condition(row[0] == 'improvement')
-          raises 'stop'
+          on(row[0] == 'improvement') do
+            raise 'stop'
+          end
 
-          always
-          result { push(row[0]) }
+          handle { |r| r.push(row[0]) }
         end
       end.to raise_error 'stop'
       expect(result).to eq []
 
       expect(
         @db.select('SELECT VALUE FROM TEST', '') do |row|
-          condition row[0] == 'test'
-          result { "#{self} 42" }
-
-          condition row[0] == 'improvement'
-          result { "#{self} 55" }
+          on(row[0] == 'test') { |r| "#{r}6" }
+          on(row[0] == 'improvement') { |r| "#{r}/49" }
         end
-      ).to eq(' 42 55')
+      ).to eq('6/49')
     end
   end
 end

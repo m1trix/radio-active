@@ -6,3 +6,4 @@ puts spec
 $LOAD_PATH.unshift(spec) unless $LOAD_PATH.include? spec
 
 require 'database_spec.rb'
+require 'access_spec.rb'
