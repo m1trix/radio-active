@@ -24,10 +24,9 @@ module Radioactive
     end
 
     def allow(username, password)
-      hash = encrypt(password)
       sql = <<-SQL
         INSERT INTO #{TABLE} (#{COLUMN_USER}, #{COLUMN_PASS})
-        VALUES ('#{username}', '#{hash}')
+        VALUES ('#{username}', '#{encrypt(password)}')
       SQL
       @db.execute(sql) do
         error(:duplicate_key) do

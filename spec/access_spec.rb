@@ -1,4 +1,5 @@
-require 'radioactive/access.rb'
+require 'radioactive/access'
+require 'mock/database_mock'
 
 describe Radioactive::Access do
   before :each do
@@ -15,7 +16,7 @@ describe Radioactive::Access do
   it 'creates tables if missing' do
     expect do
       @db.execute('CREATE TABLE #{Radioactive::Access::TABLE}')
-    end.to raise_error DBI::Error
+    end.to raise_error Radioactive::DatabaseError
   end
 
   describe '#allow' do

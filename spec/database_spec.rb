@@ -1,38 +1,35 @@
 require 'radioactive/database'
-require 'mock/constants_mock'
+require 'mock/database_mock'
 
 describe Radioactive::Database do
+  after :each do
+    @db.execute <<-SQL
+      DROP TABLE IF EXISTS TEST
+    SQL
+  end
+
+  before :each do
+    @db = Radioactive::Database.new
+    @db.execute <<-SQL
+      CREATE TABLE TEST (
+        `NAME` VARCHAR(32) PRIMARY KEY,
+        `VALUE` VARCHAR(32)
+      ) ENGINE=InnoDB
+    SQL
+  end
+
   describe '::bind' do
     it 'binds the DB parameters to the class' do
       Radioactive::Database.bind(database: 'DB', user: 'USER', password: 'PWD')
       expect(Radioactive::Database::DB[:driver]).to eq 'DBI:Mysql:DB'
       expect(Radioactive::Database::DB[:user]).to eq 'USER'
       expect(Radioactive::Database::DB[:password]).to eq 'PWD'
+
+      Radioactive::Database.bind_test
     end
   end
 
   describe '#select' do
-    before :each do
-      Radioactive::Database.bind(
-        database: Radioactive::Constants::DB_DRIVER,
-        user: Radioactive::Constants::DB_USER,
-        password: Radioactive::Constants::DB_USER_PASSWORD)
-      @db = Radioactive::Database.new
-
-      @db.execute <<-SQL
-        CREATE TABLE TEST (
-          `NAME` VARCHAR(32) PRIMARY KEY,
-          `VALUE` VARCHAR(32)
-        )
-      SQL
-    end
-
-    after :each do
-      @db.execute <<-SQL
-        DROP TABLE IF EXISTS TEST
-      SQL
-    end
-
     it 'can read and write data' do
       @db.execute "INSERT INTO TEST VALUES('reason', 'test')"
 
@@ -140,6 +137,48 @@ describe Radioactive::Database do
           on(row[0] == 'improvement') { |r| "#{r}/49" }
         end
       ).to eq('6/49')
+    end
+  end
+
+  describe '#transaction' do
+    it 'works as a simple wrapper' do
+      @db.transaction do
+        @db.execute("INSERT INTO TEST VALUES ('what', 'no')")
+      end
+
+      result = @db.select('SELECT * FROM TEST') do |row|
+        handle { row[0] }
+      end
+      expect(result).to eq 'what'
+    end
+
+    it 'works with multiple statements' do
+      @db.transaction do
+        @db.execute("INSERT INTO TEST VALUES ('what', 'no')")
+        @db.execute("INSERT INTO TEST VALUES ('you', 'die')")
+      end
+
+      expect(
+        @db.select('SELECT * FROM TEST', []) do |row|
+          handle { |result| result.push(row[1]) }
+        end
+      ).to eq ['no', 'die']
+    end
+
+    it 'rolls back all statements in case of error' do
+      expect do
+        @db.transaction do
+          @db.execute("INSERT INTO TEST VALUES ('do', 'all')")
+          @db.execute("INSERT INTO TEST VALUES ('what', 'no')")
+          @db.execute("INSERT INTO TST VALUES ('yes', 'you')")
+        end
+      end.to raise_error Radioactive::DatabaseError
+
+      expect(
+        @db.select('SELECT * FROM TEST') do |row|
+          handle { row[1] }
+        end
+      ).to be_nil
     end
   end
 end

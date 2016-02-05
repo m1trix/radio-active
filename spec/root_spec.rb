@@ -4,6 +4,3 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include? lib
 spec = File.expand_path('..', __FILE__)
 puts spec
 $LOAD_PATH.unshift(spec) unless $LOAD_PATH.include? spec
-
-require 'database_spec.rb'
-require 'access_spec.rb'
