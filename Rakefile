@@ -1,6 +1,6 @@
 require 'yaml'
 
-tests = ['database', 'access']
+tests = ['database', 'access', 'queue']
 
 desc 'Run all tests'
 task :tests do
@@ -28,20 +28,20 @@ namespace :test do
 
   task :skeptic, :task_id do |t, name|
     nesting = (name == 'database') ? 3 : 2
-    opts = [
-      '--lines-per-method=8',
-      '--line-length=80',
-      "--max-nesting-depth=#{nesting}",
-      '--methods-per-class=10',
-      '--max-method-arity=3',
-      '--check-syntax=true',
-      '--no-semicolons=true',
-      '--naming-conventions=true',
-      '--no-global-variables=true',
-      '--no-trailing-whitespace=true',
-      "--english-words-for-names='sql db username'",
-      '--spaces-around-operators=true'
-    ].join(' ')
+    opts = %W(
+      --lines-per-method=8
+      --line-length=80
+      --max-nesting-depth=#{nesting}
+      --methods-per-class=10
+      --max-method-arity=3
+      --check-syntax=true
+      --no-semicolons=true
+      --naming-conventions=true
+      --no-global-variables=true
+      --no-trailing-whitespace=true
+      --english-words-for-names='sql db username url'
+      --spaces-around-operators=true
+    ).join(' ')
 
     system("bundle exec skeptic #{opts} lib/radioactive/#{name}.rb") or exit(1)
   end

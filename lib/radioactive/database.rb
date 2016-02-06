@@ -6,7 +6,7 @@ module Radioactive
     attr_reader :code
 
     def initialize(error)
-      super(error.message)
+      super(error)
       @code = -1
 
       if error.is_a?(DBI::DatabaseError)
