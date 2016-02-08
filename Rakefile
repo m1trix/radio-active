@@ -1,6 +1,6 @@
 require 'yaml'
 
-tests = ['database', 'access', 'queue']
+tests = ['database', 'access', 'queue', 'youtube']
 
 desc 'Run all tests'
 task :tests do
@@ -39,7 +39,7 @@ namespace :test do
       --naming-conventions=true
       --no-global-variables=true
       --no-trailing-whitespace=true
-      --english-words-for-names='sql db username url'
+      --english-words-for-names='json sql db username url uri'
       --spaces-around-operators=true
     ).join(' ')
 

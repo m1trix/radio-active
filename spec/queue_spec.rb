@@ -3,11 +3,21 @@ require 'radioactive/song'
 require 'mock/database_mock'
 
 describe Radioactive::SongsQueue do
+  def song(artist, title)
+    Radioactive::Song.new(
+      id: '1234',
+      artist: artist,
+      title: title,
+      thumbnail: '1234',
+      duration: 0
+    )
+  end
+
   before :all do
     @songs = {
-      fire: Radioactive::Song.new('Ed Sheeran', 'I See Fire', 'url'),
-      hello: Radioactive::Song.new('Adele', 'Hello', 'url'),
-      writings: Radioactive::Song.new('Sam Smith', 'Writings on the Wall', 'url')
+      fire: song('Ed Sheeran', 'I See Fire'),
+      hello: song('Adele', 'Hello'),
+      writings: song('Sam Smith', 'Writings on the Wall')
     }
   end
 
@@ -53,7 +63,7 @@ describe Radioactive::SongsQueue do
       expect(
         @db.select("SELECT * FROM #{Radioactive::SongsQueue::TABLE}", []) do |row|
           handle do |queue|
-            queue.push(row[1])
+            queue.push(row['ARTIST'])
           end
         end
       ).to eq [@songs[:hello].artist, @songs[:fire].artist]

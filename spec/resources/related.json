@@ -1,0 +1,144 @@
+{
+  "kind": "youtube#searchListResponse",
+  "etag": "\"DsOZ7qVJA4mxdTxZeNzis6uE6ck/jxAM1yV9mu0ZDkstj26Akzm_LQE\"",
+  "nextPageToken": "CDIQAA",
+  "regionCode": "BG",
+  "pageInfo": {
+    "totalResults": 4,
+    "resultsPerPage": 4
+  },
+  "items": [
+    {
+      "kind": "youtube#searchResult",
+      "etag": "\"DsOZ7qVJA4mxdTxZeNzis6uE6ck/AVki2Jslb1Ai9ppfQPyLFkfJlLo\"",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "hLQl3WQQoQ0"
+      },
+      "snippet": {
+        "publishedAt": "2011-09-27T21:37:34.000Z",
+        "channelId": "UComP_epzeKzvBX156r6pm1Q",
+        "title": "Adele - Someone Like You",
+        "description": "Music video by Adele performing Someone Like You. (C) 2011 XL Recordings Ltd",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/hLQl3WQQoQ0/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/hLQl3WQQoQ0/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/hLQl3WQQoQ0/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "AdeleVEVO",
+        "liveBroadcastContent": "none"
+      }
+    },
+    {
+      "kind": "youtube#searchResult",
+      "etag": "\"DsOZ7qVJA4mxdTxZeNzis6uE6ck/qWKNsGbOCGZVSRmSJJC1nmAe9v8\"",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "rYEDA3JcQqw"
+      },
+      "snippet": {
+        "publishedAt": "2010-11-30T23:16:19.000Z",
+        "channelId": "UComP_epzeKzvBX156r6pm1Q",
+        "title": "Adele - Rolling in the Deep",
+        "description": "Music video by Adele performing Rolling In The Deep. (C) 2010 XL Recordings Ltd.\n\n#VEVOCertified on July 25, 2011. http://www.vevo.com/certified http://www.youtube.com/vevocertified",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/rYEDA3JcQqw/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/rYEDA3JcQqw/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/rYEDA3JcQqw/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "AdeleVEVO",
+        "liveBroadcastContent": "none"
+      }
+    },
+    {
+      "kind": "youtube#searchResult",
+      "etag": "\"DsOZ7qVJA4mxdTxZeNzis6uE6ck/mFuAsZQoTtBK9g6WWNdGMZTWvHs\"",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "DeumyOzKqgI"
+      },
+      "snippet": {
+        "publishedAt": "2012-10-11T10:37:01.000Z",
+        "channelId": "UComP_epzeKzvBX156r6pm1Q",
+        "title": "Adele - Skyfall (Lyric Video)",
+        "description": "Buy Skyfall now: http://smarturl.it/AdeleSkyfall\n\nWritten by ADELE and Paul Epworth. \n\nSkyfall is the official theme song to the James Bond film of the same name.\n\nVideo by Nick Chappell.\n\nhttp://adele.tv",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/DeumyOzKqgI/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/DeumyOzKqgI/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/DeumyOzKqgI/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "AdeleVEVO",
+        "liveBroadcastContent": "none"
+      }
+    },
+    {
+      "kind": "youtube#searchResult",
+      "etag": "\"DsOZ7qVJA4mxdTxZeNzis6uE6ck/StWBYtFz7M8GYXg0xFfAY2FUOQQ\"",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "QcIy9NiNbmo"
+      },
+      "snippet": {
+        "publishedAt": "2015-05-18T02:31:58.000Z",
+        "channelId": "UCANLZYMidaCbLQFWXBC95Jg",
+        "title": "Taylor Swift - Bad Blood ft. Kendrick Lamar",
+        "description": "Check out Taylor’s new video “Bad Blood!”  “Bad Blood” featuring Kendrick Lamar is Available Now on iTunes http://smarturl.it/tsbadblood.  Taylor’s multi-platinum release 1989 is Available Now on iTunes http://www.smarturl.it/TS1989\n\nTaylor Swift as Catastrophe\nSelena Gomez as Arsyn\nKarlie Kloss as Knockout\nKendrick Lamar as Welvin Da Great\nMartha Hunt as HomeSlice\nJessica Alba as Domino\nSerayah as Dilemma\nLena Dunham as Lucky Fiori\nHailee Steinfeld as The Trinity\nEllie Goulding as Destructa X\nGiGi Hadid as Slay-Z\nHayley Williams as The Crimson Curse\nZendaya as Cut-Throat\nLily Aldridge as Frostbyte\nEllen Pompeo as Luna\nMariska Hargitay as Justice\nCara Delevingne as Mother Chucker\nCindy Crawford as Headmistress\n\nhttp://www.vevo.com/watch/USCJY1531563?utm_source=youtube&utm_medium=description&utm_campaign=ytd\n\nMusic video by Taylor Swift performing Bad Blood. (C) 2015 Big Machine Records, LLC.",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/QcIy9NiNbmo/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/QcIy9NiNbmo/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/QcIy9NiNbmo/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "TaylorSwiftVEVO",
+        "liveBroadcastContent": "none"
+      }
+    }
+  ]
+}

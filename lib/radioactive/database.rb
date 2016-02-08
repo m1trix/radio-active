@@ -133,7 +133,6 @@ module Radioactive
         apply(&block) if @handle == :success
       end
 
-
       def on_error(error)
         @handle = :error
         @error = error

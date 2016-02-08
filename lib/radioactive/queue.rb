@@ -6,18 +6,12 @@ module Radioactive
   class SongsQueue
     TABLE = 'QUEUE'
     ENGINE = 'ENGINE=InnoDB'
-
-    C_NUMBER = 'NUMBER'
-    C_ARTIST = 'ARTIST'
-    C_TITLE = 'TITLE'
-    C_URL = 'URL'
+    NUMBER = 'NUMBER'
 
     TABLE_SQL = <<-SQL
       CREATE TABLE IF NOT EXISTS #{TABLE} (
-        `#{C_NUMBER}` INTEGER PRIMARY KEY,
-        `#{C_ARTIST}` VARCHAR(128),
-        `#{C_TITLE}` VARCHAR(128),
-        `#{C_URL}` VARCHAR(128)
+        `#{NUMBER}` INTEGER PRIMARY KEY,
+        #{Song.column_definitions.join(',')}
       ) #{ENGINE}
     SQL
 
@@ -45,7 +39,7 @@ module Radioactive
     def load_queue
       @db.select("SELECT * FROM #{TABLE}", []) do |row|
         handle do |queue|
-          queue.push(Song.new(row[C_ARTIST], row[C_TITLE], row[C_URL]))
+          queue.push(Song.from_sql(row))
         end
       end
     end
@@ -69,27 +63,24 @@ module Radioactive
     def persist(queue)
       @db.transaction do
         @db.execute("DELETE FROM #{TABLE}")
-        @db.execute <<-SQL
-          INSERT INTO #{TABLE} #{columns}
-          VALUES #{values(queue)}
-        SQL
+        @db.execute("INSERT INTO #{TABLE} #{columns} VALUES #{values(queue)}")
       end
     end
 
     def columns
-      "(#{C_NUMBER}, #{C_ARTIST}, #{C_TITLE}, #{C_URL})"
+      "(#{NUMBER},#{Song.columns.join(',')})"
     end
 
     def values(queue)
       result = queue.each_with_index.map do |song, i|
-        "(#{i}, '#{song.artist}', '#{song.title}', '#{song.url}')"
+        "(#{i},#{song.sql_values.join(',')})"
       end
       result.join(',')
     end
 
     def initialize_table
       @db.execute(TABLE_SQL) do
-        on_error do
+        error do
           raise RadioactiveError, 'Failed to initialize playlist'
         end
       end
