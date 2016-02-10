@@ -3,7 +3,7 @@ require 'radioactive/database'
 require 'digest'
 
 module Radioactive
-  class AccessError < RadioactiveError
+  class AccessError < Error
   end
 
   class Access

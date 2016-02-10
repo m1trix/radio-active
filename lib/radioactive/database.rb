@@ -2,7 +2,7 @@ require 'radioactive/exception'
 require 'dbi'
 
 module Radioactive
-  class DatabaseError < RadioactiveError
+  class DatabaseError < Error
     attr_reader :code
 
     def initialize(error)

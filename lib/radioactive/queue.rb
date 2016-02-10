@@ -4,84 +4,96 @@ require 'radioactive/song'
 
 module Radioactive
   class SongsQueue
-    TABLE = 'QUEUE'
-    ENGINE = 'ENGINE=InnoDB'
-    NUMBER = 'NUMBER'
+    module SQL
+      TABLE = 'QUEUE'
 
-    TABLE_SQL = <<-SQL
-      CREATE TABLE IF NOT EXISTS #{TABLE} (
-        `#{NUMBER}` INTEGER PRIMARY KEY,
-        #{Song.column_definitions.join(',')}
-      ) #{ENGINE}
-    SQL
+      COLUMN_CYCLE = 'CYCLE'
+      COLUMN_SONG = 'SONG'
 
-    attr_reader :queue
+      module_function
 
-    def initialize
+      def table
+        <<-SQL
+          CREATE TABLE IF NOT EXISTS #{TABLE}
+          (
+            `#{COLUMN_CYCLE}` DATETIME(3) PRIMARY KEY,
+            `#{COLUMN_SONG}` VARCHAR(256)
+          )
+        SQL
+      end
+
+      def insert
+        <<-SQL
+          INSERT INTO #{TABLE} (#{COLUMN_CYCLE}, #{COLUMN_SONG})
+            VALUES %{values}
+        SQL
+      end
+
+      def load
+        <<-SQL
+          SELECT #{COLUMN_SONG}
+            FROM #{TABLE}
+            WHERE #{COLUMN_CYCLE} >= '%{cycle}'
+        SQL
+      end
+    end
+  end
+end
+
+module Radioactive
+  class SongsQueue
+    def initialize(cycle)
+      @queue = []
+      @cycle = cycle
+
       @db = Database.new
       initialize_table
-      @queue = load_queue
+      load_queue
+    end
+
+    def all
+      @queue.dup
+    end
+
+    def top
+      @queue.first
     end
 
     def push(song)
-      set_queue @queue.dup.push(validate_song(song))
-    end
+      assert_song(song)
+      sql = SQL.insert % { values: "('#{@cycle.to_s}','#{song.to_s}')" }
+      @db.execute(sql) do
+        error :duplicate_key do
+          raise Error, 'A song was pushed to the queue in this cycle'
+        end
 
-    def replace(song)
-      if @queue.empty?
-        raise RadioactiveError, 'The queue is empty'
+        error do
+          raise Error, 'Failed to push to the queue'
+        end
       end
-      set_queue @queue.drop(1).push(validate_song(song))
+      @queue.push song
     end
 
     private
 
     def load_queue
-      @db.select("SELECT * FROM #{TABLE}", []) do |row|
+      @queue = @db.select(SQL.load % { cycle: @cycle } , []) do |row|
         handle do |queue|
-          queue.push(Song.from_sql(row))
+          queue.push(Song.new(row[SQL::COLUMN_SONG]))
         end
       end
     end
 
-    def validate_song(song)
-      unless song.is_a? Radioactive::Song
-        raise RadioactiveError, 'Only songs can be added to the queue'
+    def assert_song(song)
+      unless song.is_a?(Radioactive::Song)
+        raise Error, 'Only songs can be added to the queue'
       end
-      song
-    end
-
-    def set_queue(queue)
-      begin
-        persist(queue)
-        @queue = queue
-      rescue DatabaseError => e
-        raise RadioactiveError, 'Operation failed'
-      end
-    end
-
-    def persist(queue)
-      @db.transaction do
-        @db.execute("DELETE FROM #{TABLE}")
-        @db.execute("INSERT INTO #{TABLE} #{columns} VALUES #{values(queue)}")
-      end
-    end
-
-    def columns
-      "(#{NUMBER},#{Song.columns.join(',')})"
-    end
-
-    def values(queue)
-      result = queue.each_with_index.map do |song, i|
-        "(#{i},#{song.sql_values.join(',')})"
-      end
-      result.join(',')
     end
 
     def initialize_table
-      @db.execute(TABLE_SQL) do
+      @db.execute(SQL.table) do
         error do
-          raise RadioactiveError, 'Failed to initialize playlist'
+          raise Error, 'Failed to initialize playlist'
         end
       end
     end

@@ -1,122 +1,100 @@
 require 'radioactive/queue'
 require 'radioactive/song'
+require 'radioactive/cycle'
 require 'mock/database_mock'
 
 describe Radioactive::SongsQueue do
-  def song(artist, title)
-    Radioactive::Song.new(
-      id: '1234',
-      artist: artist,
-      title: title,
-      thumbnail: '1234',
-      duration: 0
-    )
-  end
-
   before :all do
     @songs = {
-      fire: song('Ed Sheeran', 'I See Fire'),
-      hello: song('Adele', 'Hello'),
-      writings: song('Sam Smith', 'Writings on the Wall')
+      fire: Radioactive::Song.new('Ed Sheeran - I See Fire'),
+      hello: Radioactive::Song.new('Adele - Hello'),
+      writings: Radioactive::Song.new('Sam Smith - Writings on the Wall')
     }
   end
 
   before :each do
     @db = Radioactive::Database.new
-    @queue = Radioactive::SongsQueue.new
+    @cycle = Radioactive::Cycle.new
+    @queue = Radioactive::SongsQueue.new(@cycle)
   end
 
   after :each do
     @db.execute <<-SQL
-      DROP TABLE IF EXISTS #{Radioactive::SongsQueue::TABLE}
+      DROP TABLE IF EXISTS #{Radioactive::SongsQueue::SQL::TABLE}
     SQL
   end
 
   describe '#initialize' do
     it 'creates all missing tables' do
       expect(
-        @db.select("SHOW TABLES LIKE '#{Radioactive::SongsQueue::TABLE}'", []) do |row|
+        @db.select("SHOW TABLES LIKE '#{Radioactive::SongsQueue::SQL::TABLE}'", []) do |row|
           handle do |tables|
             tables.push(row[0])
           end
         end
-      ).to eq [Radioactive::SongsQueue::TABLE]
+      ).to eq [Radioactive::SongsQueue::SQL::TABLE]
     end
 
     it 'loads the queue from the database' do
       @queue.push(@songs[:hello])
-      @queue = Radioactive::SongsQueue.new
-      expect(@queue.queue).to eq [@songs[:hello]]
+      @queue = Radioactive::SongsQueue.new(@cycle)
+      expect(@queue.all).to eq [@songs[:hello]]
     end
   end
 
   describe '#push' do
     it 'pushes a new song at the end of the queue' do
-      expect(@queue.queue).to eq []
+      expect(@queue.all).to eq []
 
       @queue.push(@songs[:hello])
-      expect(@queue.queue). to eq [@songs[:hello]]
-
-      @queue.push(@songs[:fire])
-      expect(@queue.queue). to eq [@songs[:hello], @songs[:fire]]
+      expect(@queue.all). to eq [@songs[:hello]]
 
       expect(
-        @db.select("SELECT * FROM #{Radioactive::SongsQueue::TABLE}", []) do |row|
+        @db.select("SELECT * FROM #{Radioactive::SongsQueue::SQL::TABLE}", []) do |row|
           handle do |queue|
-            queue.push(row['ARTIST'])
+            queue.push(Radioactive::Song.new(row['SONG']))
           end
         end
-      ).to eq [@songs[:hello].artist, @songs[:fire].artist]
-    end
-  end
-
-  describe '#replace' do
-    it 'pops the first song and pushes a new one' do
-      @queue.push(@songs[:hello])
-      expect(@queue.queue).to eq [@songs[:hello]]
-
-      @queue.replace(@songs[:fire])
-      expect(@queue.queue).to eq [@songs[:fire]]
-
-      @queue.push(@songs[:writings])
-      expect(@queue.queue).to eq [@songs[:fire], @songs[:writings]]
-
-      @queue.replace(@songs[:hello])
-      expect(@queue.queue).to eq [@songs[:writings], @songs[:hello]]
+      ).to eq [@songs[:hello]]
     end
 
-    it 'does not work on an empty queue' do
+    it 'cannot add elements that are not songs' do
       expect do
-        @queue.replace(@songs[:hello])
-      end.to raise_error 'The queue is empty'
+        @queue.push :keyword
+      end.to raise_error 'Only songs can be added to the queue'
+      expect(@queue.all).to eq []
     end
-  end
 
-  it 'does not change in case of an error' do
-    @queue.push @songs[:hello]
-    @db.execute "DROP TABLE #{Radioactive::SongsQueue::TABLE}"
+    it 'does not change in case of an error' do
+      @db.execute "DROP TABLE #{Radioactive::SongsQueue::SQL::TABLE}"
 
-    expect do
-      @queue.replace @songs[:fire]
-    end.to raise_error 'Operation failed'
-    expect(@queue.queue).to eq [@songs[:hello]]
+      expect do
+        @queue.push @songs[:fire]
+      end.to raise_error 'Failed to push to the queue'
 
-    expect do
-      @queue.push @songs[:fire]
-    end.to raise_error 'Operation failed'
-    expect(@queue.queue).to eq [@songs[:hello]]
-  end
+      expect(@queue.all).to eq []
+    end
 
-  it 'cannot hold elements that are not songs' do
-    expect do
-      @queue.push :keyword
-    end.to raise_error 'Only songs can be added to the queue'
-    @queue.push @songs[:hello]
+    it 'cannot push twice in the same cycle' do
+      @queue.push @songs[:writings]
+      expect do
+        @queue.push @songs[:fire]
+      end.to raise_error 'A song was pushed to the queue in this cycle'
+      expect(@queue.top).to eq @songs[:writings]
+    end
 
-    expect do
-      @queue.replace []
-    end.to raise_error 'Only songs can be added to the queue'
+    it 'only loads songs newer than the current cycle' do
+      first_cycle = Radioactive::Cycle.new
+      Radioactive::SongsQueue.new(first_cycle).push @songs[:fire]
 
-    expect(@queue.queue).to eq [@songs[:hello]]
+      next_cycle = Radioactive::Cycle.new
+      Radioactive::SongsQueue.new(next_cycle).push @songs[:writings]
+
+      expect(Radioactive::SongsQueue.new(first_cycle).all).to(
+        eq [@songs[:fire], @songs[:writings]])
+
+      expect(Radioactive::SongsQueue.new(next_cycle).all).to(
+        eq [@songs[:writings]])
+    end
   end
 end

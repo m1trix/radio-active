@@ -1,4 +1,4 @@
 module Radioactive
-  class RadioactiveError < RuntimeError
+  class Error < RuntimeError
   end
 end

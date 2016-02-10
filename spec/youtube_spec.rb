@@ -32,7 +32,7 @@ describe Radioactive::YouTube do
         end
 
         expect do
-          @net.call(description: 'test', url: 'doesnt/matter')
+          @net.call(description: 'test', relative_url: 'doesnt/matter')
         end.to raise_error "Request for 'test' failed with code 404"
       end
 
@@ -41,7 +41,7 @@ describe Radioactive::YouTube do
           build_response(200, 'that body')
         end
 
-        expect(@net.call(url: 'doesnt/matter')).to eq 'that body'
+        expect(@net.call(relative_url: 'doesnt/matter')).to eq 'that body'
       end
 
       it 'can receive query parameters' do
@@ -51,7 +51,7 @@ describe Radioactive::YouTube do
 
         api = Radioactive::YouTube::CONSTANTS[:api]
         expect(@net.call(
-          url: 'doesnt/matter',
+          relative_url: 'doesnt/matter',
           parameters: ['param1', 'param2=true'])
         ).to eq "#{api}/doesnt/matter?param1&param2=true&key=apikey"
       end
@@ -67,18 +67,21 @@ describe Radioactive::YouTube do
     end
 
     describe '#related' do
-      it 'it parses the response json and returns an array of songs' do
+      it 'it parses the response json and returns an array of videos' do
         mock_http_call @proxy do
           content = File.read('spec/resources/related.json')
           build_response(200, content)
         end
 
-        song = Radioactive::Song.new(artist: 'Adele', title: 'Hello')
-        expect(@proxy.related(song)).to eq [
-          Radioactive::Song.new(artist: 'Adele', title: 'Someone Like You'),
-          Radioactive::Song.new(artist: 'Adele', title: 'Rolling in the Deep'),
-          Radioactive::Song.new(artist: 'Adele', title: 'Skyfall (Lyric Video)'),
-          Radioactive::Song.new(artist: 'Taylor Swift', title: 'Bad Blood ft. Kendrick Lamar')
+        video = Radioactive::Video.new(
+          song:Radioactive::Song.new(artist: 'Adele', title: 'Hello')
+        )
+
+        expect(@proxy.related(video).map(&:song)).to eq [
+          Radioactive::Song.new('Adele - Someone Like You'),
+          Radioactive::Song.new('Adele - Rolling in the Deep'),
+          Radioactive::Song.new('Adele - Skyfall (Lyric Video)'),
+          Radioactive::Song.new('Taylor Swift - Bad Blood ft. Kendrick Lamar')
         ]
       end
     end

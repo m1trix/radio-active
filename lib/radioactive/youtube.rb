@@ -1,33 +1,25 @@
 require 'radioactive/exception'
-require 'radioactive/song'
+require 'radioactive/video'
 require 'net/http'
 require 'json'
 
 module Radioactive
-  class YouTubeError < RadioactiveError
+  class YouTubeError < Error
   end
 end
 
 module Radioactive
   class YouTube
     module Convert
-      REGEX = /\A(?<artist>.+) - (?<title>.+)\z/
-
       module_function
 
-      def json_to_song(json)
-        Song.new(**{
+      def json_to_video(json)
+        Video.new(**{
+          length: 0,
           id: json['id']['videoId'],
-          duration: 0,
-          artist: get_from_title('artist', json['snippet']['title']),
-          title: get_from_title('title', json['snippet']['title']),
+          song: Song.new(json['snippet']['title']),
           thumbnail: json['snippet']['thumbnails']['default']
         })
-      end
-
-      def get_from_title(group, string)
-        match = string.match(REGEX)
-        match[group] if match
       end
     end
   end
@@ -52,9 +44,9 @@ end
 module Radioactive
   class YouTube
     class Network
-      def call(url:, description: '', parameters: [])
-        url = build_url(url, parameters)
-        uri = URI.parse("#{CONSTANTS[:api]}/#{url}")
+      def call(relative_url:, description: '', parameters: [])
+        relative_url = build_url(relative_url, parameters)
+        uri = URI.parse("#{CONSTANTS[:api]}/#{relative_url}")
         response = get_response(uri)
 
         assert_no_error(response, description)
@@ -86,13 +78,13 @@ end
 module Radioactive
   class YouTube
     class Proxy < Network
-      def related(song)
+      def related(video)
         related = call(
           description: 'related videos',
-          url: 'search',
+          relative_url: 'search',
           parameters: [
             'part=snippet',
-            "relatedToVideoId=#{song.id}",
+            "relatedToVideoId=#{video.id}",
             'type=video',
             'maxResults=10'
           ])
@@ -101,7 +93,7 @@ module Radioactive
 
       def convert(songs_json)
         songs_json['items'].map do |json|
-          Convert.json_to_song(json)
+          Convert.json_to_video(json)
         end
       end
     end
