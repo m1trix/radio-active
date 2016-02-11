@@ -1,6 +1,5 @@
 require 'radioactive/vote'
 require 'radioactive/cycle'
-require 'radioactive/song'
 require 'mock/database_mock'
 
 describe Radioactive::VotingSystem do
@@ -9,11 +8,7 @@ describe Radioactive::VotingSystem do
     @cycle = Radioactive::Cycle.new
     @votes = Radioactive::VotingSystem.new(@cycle)
 
-    @songs = {
-      fire: Radioactive::Song.new('Ed Sheeran - I See Fire'),
-      hello: Radioactive::Song.new('Adele - Hello'),
-      writings: Radioactive::Song.new('Sam Smith - Writings on the Wall'),
-    }
+    @songs = {fire: '1111', hello: '2222', writings: '3333'}
   end
 
   after :each do
@@ -65,16 +60,14 @@ describe Radioactive::VotingSystem do
   end
 
   it 'loads the votes of the current cycle only' do
-    this_cycle = Radioactive::Cycle.new
-    Radioactive::VotingSystem.new(this_cycle).vote('test_user', @songs[:fire])
-    sleep(1)
-    next_cycle = Radioactive::Cycle.new
+    Radioactive::VotingSystem.new(@cycle).vote('test_user', @songs[:fire])
+    next_cycle = @cycle.next
     Radioactive::VotingSystem.new(next_cycle).vote('test_user', @songs[:hello])
 
     expect(
       [
-        Radioactive::VotingSystem.new(this_cycle).votes(@songs[:fire]),
-        Radioactive::VotingSystem.new(this_cycle).votes(@songs[:hello])
+        Radioactive::VotingSystem.new(@cycle).votes(@songs[:fire]),
+        Radioactive::VotingSystem.new(@cycle).votes(@songs[:hello])
       ]
     ).to eq [1, 0]
 

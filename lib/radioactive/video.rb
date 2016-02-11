@@ -1,11 +1,9 @@
-require 'radioactive/song'
-
 module Radioactive
   class Video
     module SQL
       COLUMNS = {
-        song: 'VARCHAR(256)',
         id: 'VARCHAR(32)',
+        song: 'VARCHAR(256)',
         length: 'INTEGER',
         thumbnail: 'VARCHAR(128)'
       }
@@ -14,8 +12,8 @@ module Radioactive
 
       def values(video)
         "('%s', '%s', %d, '%s')" % [
-          video.song,
           video.id,
+          video.song.sub(/'/, "''"),
           video.length,
           video.thumbnail
         ]
@@ -23,10 +21,10 @@ module Radioactive
 
       def get(row)
         Video.new(
-          song: Song.new(row[column :song]),
-          id: row[column :id],
-          thumbnail: row[column :thumbnail],
-          length: row[column :length]
+          id: row[column(:id)],
+          song: row[column(:song)],
+          thumbnail: row[column(:thumbnail)],
+          length: row[column(:length)]
         )
       end
 
@@ -44,9 +42,13 @@ module Radioactive
         columns.join(',')
       end
 
+      def type(name)
+        "`#{column(name)}` #{COLUMNS[name]}"
+      end
+
       def types
-        COLUMNS.map do |column, type|
-          "`#{column(column)}` #{type}"
+        COLUMNS.each_key.map do |column|
+          type(column)
         end
       end
 
@@ -61,7 +63,7 @@ module Radioactive
   class Video
     attr_reader :id, :song, :length, :thumbnail
 
-    def initialize(song:, id: '', length: 0, thumbnail: '')
+    def initialize(id:, song:, length: 0, thumbnail: '')
       @id = id
       @song = song
       @length = length
@@ -73,7 +75,7 @@ module Radioactive
     end
 
     def ==(other)
-      other.is_a?(Video) and (@song == other.song)
+      other.is_a?(Video) and (@id == other.id)
     end
   end
 end

@@ -9,24 +9,24 @@ describe Radioactive::Access do
 
   after :each do
     @db.execute <<-SQL
-      DROP TABLE IF EXISTS #{Radioactive::Access::TABLE}
+      DROP TABLE IF EXISTS #{Radioactive::Access::SQL::TABLE}
     SQL
   end
 
   it 'creates tables if missing' do
     expect do
-      @db.execute('CREATE TABLE #{Radioactive::Access::TABLE}')
+      @db.execute('CREATE TABLE #{Radioactive::Access::SQL::TABLE}')
     end.to raise_error Radioactive::DatabaseError
   end
 
-  describe '#allow' do
+  describe '#register' do
     it 'can allow user access' do
-      @access.allow('test1', 'pass')
-      @access.allow('test2', 'pass')
+      @access.register('test1', 'pass')
+      @access.register('test2', 'pass')
 
       sql = <<-SQL
-        SELECT #{Radioactive::Access::COLUMN_USER}
-        FROM #{Radioactive::Access::TABLE}
+        SELECT #{Radioactive::Access::SQL::COLUMN_USER}
+        FROM #{Radioactive::Access::SQL::TABLE}
       SQL
 
       expect(
@@ -36,10 +36,10 @@ describe Radioactive::Access do
       ).to eq %w(test1 test2)
     end
 
-    it 'cannot allow user twice' do
-      @access.allow('test', 'pass')
+    it 'cannot register user twice' do
+      @access.register('test', 'pass')
       expect do
-        @access.allow('test', 'another_pass')
+        @access.register('test', 'another_pass')
       end.to raise_error Radioactive::AccessError
     end
   end
@@ -50,7 +50,7 @@ describe Radioactive::Access do
         @access.check('test', 'pass')
       end.to raise_error Radioactive::AccessError
 
-      @access.allow('test', 'pass')
+      @access.register('test', 'pass')
       @access.check('test', 'pass')
 
       expect do

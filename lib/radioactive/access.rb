@@ -3,42 +3,6 @@ require 'radioactive/database'
 require 'digest'
 
 module Radioactive
-  class Access
-    module SQL
-      TABLE = 'ACCESS'
-      COLUMN_USER = 'USERNAME'
-      COLUMN_PASS = 'PASSWORD'
-
-      module_function
-
-      def table
-        <<-SQL
-          CREATE TABLE IF NOT EXISTS #{TABLE} (
-            `#{COLUMN_USER}` VARCHAR(32) PRIMARY KEY,
-            `#{COLUMN_PASS}` VARCHAR(128)
-          )
-        SQL
-      end
-
-      def register(user, hash)
-        <<-SQL
-          INSERT INTO #{TABLE} (#{COLUMN_USER}, #{COLUMN_PASS})
-          VALUES ('#{user}', '#{hash}')
-        SQL
-      end
-
-      def check(user)
-        <<-SQL
-          SELECT #{COLUMN_PASS}
-            FROM #{TABLE}
-            WHERE #{COLUMN_USER}='#{user}'
-        SQL
-      end
-    end
-  end
-end
-
-module Radioactive
   class AccessError < Error
   end
 
@@ -57,8 +21,8 @@ module Radioactive
     end
 
     def register(username, password)
-      assert_username(username);
-      assert_password(password);
+      assert_username(username)
+      assert_password(password)
       @db.execute(SQL.register(username, encrypt(password))) do
         error(:duplicate_key) do
           raise AccessError, 'Username already exists'
@@ -107,6 +71,42 @@ module Radioactive
     def encrypt(string)
       return '' if string.nil?
       Digest::SHA512.hexdigest string
+    end
+  end
+end
+
+module Radioactive
+  class Access
+    module SQL
+      TABLE = 'ACCESS'
+      COLUMN_USER = 'USERNAME'
+      COLUMN_PASS = 'PASSWORD'
+
+      module_function
+
+      def table
+        <<-SQL
+          CREATE TABLE IF NOT EXISTS #{TABLE} (
+            `#{COLUMN_USER}` VARCHAR(32) PRIMARY KEY,
+            `#{COLUMN_PASS}` VARCHAR(128)
+          )
+        SQL
+      end
+
+      def register(user, hash)
+        <<-SQL
+          INSERT INTO #{TABLE} (#{COLUMN_USER}, #{COLUMN_PASS})
+          VALUES ('#{user}', '#{hash}')
+        SQL
+      end
+
+      def check(user)
+        <<-SQL
+          SELECT #{COLUMN_PASS}
+            FROM #{TABLE}
+            WHERE #{COLUMN_USER}='#{user}'
+        SQL
+      end
     end
   end
 end

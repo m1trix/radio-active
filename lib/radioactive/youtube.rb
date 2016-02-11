@@ -1,4 +1,5 @@
 require 'radioactive/exception'
+require 'radioactive/logger'
 require 'radioactive/video'
 require 'net/http'
 require 'json'
@@ -14,12 +15,46 @@ module Radioactive
       module_function
 
       def json_to_video(json)
+        length = parse_length(json)
+        song = parse_song(json)
+        return nil unless song
+
         Video.new(
-          length: 0,
-          id: json['id']['videoId'] || json['id'],
-          song: Song.new(json['snippet']['title']),
+          length: length,
+          id: parse_id(json),
+          song: song,
           thumbnail: json['snippet']['thumbnails']['default']['url']
         )
+      end
+
+      def parse_id(json)
+        json['id']['videoId'] || json['id']
+      end
+
+      def parse_song(json)
+        json['snippet']['title']
+      end
+
+      def parse_length(json)
+        return 0 unless json['contentDetails']
+        convert_time(json['contentDetails']['duration'])
+      end
+
+      def convert_time(string)
+        hours, minutes, seconds = 0, 0, 0
+        if match = string.match(/.*(\d+)H.*\z/)
+          hours = match.captures[0].to_i
+        end
+
+        if match = string.match(/.*(\d+)M.*\z/)
+          minutes = match.captures[0].to_i
+        end
+
+        if match = string.match(/.*(\d+)S.*\z/)
+          seconds = match.captures[0].to_i
+        end
+
+        hours * 60 * 60 + minutes * 60 + seconds
       end
     end
   end
@@ -78,17 +113,17 @@ end
 module Radioactive
   class YouTube
     class Proxy < Network
-      def related(video)
+      def related(video_id)
         related = call(
           description: 'related videos',
           relative_url: 'search',
           parameters: [
             'part=snippet',
-            "relatedToVideoId=#{video.id}",
+            "relatedToVideoId=#{video_id}",
             'type=video',
             'maxResults=10'
           ])
-        convert(JSON.parse(related))
+        filter_related(convert(JSON.parse(related), type: :song))
       end
 
       def find(video_id)
@@ -96,16 +131,24 @@ module Radioactive
           description: "find \"#{video_id}\"",
           relative_url: 'videos',
           parameters: [
-            'part=snippet',
+            'part=snippet,contentDetails',
             "id=#{video_id}"
           ])
         convert(JSON.parse(video))[0]
       end
 
-      def convert(json)
+      def convert(json, type: :video)
         json['items'].map do |item|
-          Convert.json_to_video(item)
+          if type == :video
+            Convert.json_to_video(item)
+          else
+            Convert.parse_id(item)
+          end
         end
+      end
+
+      def filter_related(songs)
+        songs.select { |song| not song.nil? }
       end
     end
   end

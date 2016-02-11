@@ -1,14 +1,13 @@
 require 'radioactive/queue'
-require 'radioactive/song'
-require 'radioactive/cycle'
+require 'mock/cycle_mock'
 require 'mock/database_mock'
 
 describe Radioactive::SongsQueue do
   before :all do
     @songs = {
-      fire: Radioactive::Song.new('Ed Sheeran - I See Fire'),
-      hello: Radioactive::Song.new('Adele - Hello'),
-      writings: Radioactive::Song.new('Sam Smith - Writings on the Wall')
+      fire: '1111',
+      hello: '2222',
+      writings: '3333'
     }
   end
 
@@ -52,17 +51,10 @@ describe Radioactive::SongsQueue do
       expect(
         @db.select("SELECT * FROM #{Radioactive::SongsQueue::SQL::TABLE}", []) do |row|
           handle do |queue|
-            queue.push(Radioactive::Song.new(row['SONG']))
+            queue.push(row[Radioactive::SongsQueue::SQL::COLUMN_SONG])
           end
         end
       ).to eq [@songs[:hello]]
-    end
-
-    it 'cannot add elements that are not songs' do
-      expect do
-        @queue.push :keyword
-      end.to raise_error 'Only songs can be added to the queue'
-      expect(@queue.all).to eq []
     end
 
     it 'does not change in case of an error' do
@@ -75,22 +67,13 @@ describe Radioactive::SongsQueue do
       expect(@queue.all).to eq []
     end
 
-    it 'cannot push twice in the same cycle' do
-      @queue.push @songs[:writings]
-      expect do
-        @queue.push @songs[:fire]
-      end.to raise_error 'A song was pushed to the queue in this cycle'
-      expect(@queue.top).to eq @songs[:writings]
-    end
-
     it 'only loads songs newer than the current cycle' do
-      first_cycle = Radioactive::Cycle.new
-      Radioactive::SongsQueue.new(first_cycle).push @songs[:fire]
+      Radioactive::SongsQueue.new(@cycle).push @songs[:fire]
 
-      next_cycle = Radioactive::Cycle.new
+      next_cycle = @cycle.next
       Radioactive::SongsQueue.new(next_cycle).push @songs[:writings]
 
-      expect(Radioactive::SongsQueue.new(first_cycle).all).to(
+      expect(Radioactive::SongsQueue.new(@cycle).all).to(
         eq [@songs[:fire], @songs[:writings]])
 
       expect(Radioactive::SongsQueue.new(next_cycle).all).to(

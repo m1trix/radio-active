@@ -33,7 +33,7 @@ describe Radioactive::YouTube do
 
         expect do
           @net.call(description: 'test', relative_url: 'doesnt/matter')
-        end.to raise_error "Request for 'test' failed with code 404"
+        end.to raise_error "Request for 'test' failed with status 404"
       end
 
       it 'returns the body of the response' do
@@ -73,15 +73,11 @@ describe Radioactive::YouTube do
           build_response(200, content)
         end
 
-        video = Radioactive::Video.new(
-          song:Radioactive::Song.new(artist: 'Adele', title: 'Hello')
-        )
-
-        expect(@proxy.related(video).map(&:song)).to eq [
-          Radioactive::Song.new('Adele - Someone Like You'),
-          Radioactive::Song.new('Adele - Rolling in the Deep'),
-          Radioactive::Song.new('Adele - Skyfall (Lyric Video)'),
-          Radioactive::Song.new('Taylor Swift - Bad Blood ft. Kendrick Lamar')
+        expect(@proxy.related('1234')).to eq [
+          'hLQl3WQQoQ0',
+          'rYEDA3JcQqw',
+          'DeumyOzKqgI',
+          'QcIy9NiNbmo'
         ]
       end
     end

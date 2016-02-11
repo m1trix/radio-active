@@ -1,6 +1,13 @@
 require 'yaml'
 
-tests = ['song', 'database', 'access', 'queue', 'youtube', 'vote', 'library']
+tests = %W(
+  database
+  access
+  queue
+  youtube
+  vote
+  library
+)
 
 desc 'Run all tests'
 task :tests do
@@ -39,7 +46,7 @@ namespace :test do
       --naming-conventions=true
       --no-global-variables=true
       --no-trailing-whitespace=true
-      --english-words-for-names='json sql db username url uri eql'
+      --english-words-for-names='json sql db username url uri eql youtube'
       --spaces-around-operators=true
     ).join(' ')
 

@@ -1,6 +1,7 @@
 require 'radioactive/database'
 require 'radioactive/exception'
 require 'radioactive/video'
+require 'radioactive/youtube'
 
 module Radioactive
   class Library
@@ -14,24 +15,16 @@ module Radioactive
           CREATE TABLE IF NOT EXISTS #{TABLE}
           (
             #{Video::SQL.joined_types},
-            PRIMARY KEY (#{Video::SQL.column(:song)})
+            PRIMARY KEY (#{Video::SQL.column(:id)})
           )
         SQL
       end
 
-      def find_by_id(id)
+      def find(id)
         <<-SQL
           SELECT #{Video::SQL.joined_columns}
             FROM #{TABLE}
             WHERE #{Video::SQL.column(:id)}='#{id}'
-        SQL
-      end
-
-      def find_by_song(song)
-        <<-SQL
-          SELECT #{Video::SQL.joined_columns}
-            FROM #{TABLE}
-            WHERE #{Video::SQL.column(:song)}='#{song.to_s}'
         SQL
       end
 
@@ -43,22 +36,10 @@ module Radioactive
         SQL
       end
 
-      def insert_many(videos)
-        values = videos.map do |video|
-          Video::SQL.values(video)
-        end
-
-        <<-SQL
-          INSERT INTO #{TABLE}
-          (#{Video::SQL.joined_columns})
-            VALUES #{values.join(',')}
-        SQL
-      end
-
-      def delete(song)
+      def delete(id)
         <<-SQL
           DELETE FROM #{TABLE}
-            WHERE #{Video::SQL.column(:song)}='#{song}'
+            WHERE #{Video::SQL.column(:id)}='#{id}'
         SQL
       end
 
@@ -97,25 +78,39 @@ module Radioactive
         end
 
         error do
-          raise Error, "Failed to insert video '#{video}'"
+          raise Error, "Failed to insert video for '#{video.id}'"
         end
       end
     end
 
-    def find(song: nil, id: nil)
-      sql = song.nil? ? SQL.find_by_id(id) : SQL.find_by_song(song)
-      @db.select(sql) do |row|
+    def find(id)
+      video = find_in_db(id)
+
+      if video.nil? and id
+        video = find_in_youtube(id)
+        add(video) if video
+      end
+
+      video
+    end
+
+    private
+
+    def find_in_youtube(id)
+      YouTube.proxy.find(id)
+    end
+
+    def find_in_db(id)
+      @db.select(SQL.find(id)) do |row|
         handle do
           Video::SQL.get(row)
         end
 
         error do
-          raise Error, "Failed to find video of song '#{song}'"
+          raise Error, "Failed to find video '#{id}'"
         end
       end
     end
-
-    private
 
     def initialize_table
       @db.execute(SQL.table) do

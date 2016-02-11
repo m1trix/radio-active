@@ -1,6 +1,6 @@
 require 'radioactive/exception'
 require 'radioactive/database'
-require 'radioactive/song'
+require 'radioactive/video'
 
 module Radioactive
   class SongsQueue
@@ -8,7 +8,7 @@ module Radioactive
       TABLE = 'QUEUE'
 
       COLUMN_CYCLE = 'CYCLE'
-      COLUMN_SONG = 'SONG'
+      COLUMN_SONG = Video::SQL.column(:id)
 
       module_function
 
@@ -16,24 +16,25 @@ module Radioactive
         <<-SQL
           CREATE TABLE IF NOT EXISTS #{TABLE}
           (
-            `#{COLUMN_CYCLE}` DATETIME(3) PRIMARY KEY,
-            `#{COLUMN_SONG}` VARCHAR(256)
+            `#{COLUMN_CYCLE}` BIGINT PRIMARY KEY,
+            #{Video::SQL.type(:id)}
           )
         SQL
       end
 
-      def insert
+      def insert(cycle, song)
         <<-SQL
           INSERT INTO #{TABLE} (#{COLUMN_CYCLE}, #{COLUMN_SONG})
-            VALUES %{values}
+            VALUES (#{cycle}, '#{song}')
         SQL
       end
 
-      def load
+      def load(cycle)
         <<-SQL
           SELECT #{COLUMN_SONG}
             FROM #{TABLE}
-            WHERE #{COLUMN_CYCLE} >= '%{cycle}'
+            WHERE #{COLUMN_CYCLE} >= #{cycle}
+            ORDER BY #{COLUMN_CYCLE} ASC
         SQL
       end
     end
@@ -60,9 +61,7 @@ module Radioactive
     end
 
     def push(song)
-      assert_song(song)
-      sql = SQL.insert % { values: "('#{@cycle.to_s}','#{song.to_s}')" }
-      @db.execute(sql) do
+      @db.execute(SQL.insert(@cycle.to_i + @queue.size, song)) do
         error :duplicate_key do
           raise Error, 'A song was pushed to the queue in this cycle'
         end
@@ -71,22 +70,16 @@ module Radioactive
           raise Error, 'Failed to push to the queue'
         end
       end
-      @queue.push song
+      @queue.push(song)
     end
 
     private
 
     def load_queue
-      @queue = @db.select(SQL.load % { cycle: @cycle } , []) do |row|
+      @queue = @db.select(SQL.load(@cycle), []) do |row|
         handle do |queue|
-          queue.push(Song.new(row[SQL::COLUMN_SONG]))
+          queue.push(row[SQL::COLUMN_SONG])
         end
-      end
-    end
-
-    def assert_song(song)
-      unless song.is_a?(Radioactive::Song)
-        raise Error, 'Only songs can be added to the queue'
       end
     end
 

@@ -6,14 +6,10 @@ describe Radioactive::Library do
     @db = Radioactive::Database.new
     @library = Radioactive::Library.new
 
-    @songs = {
-      fire: Radioactive::Song.new('Ed Sheeran - I See Fire')
-    }
-
     @videos = {
       fire: Radioactive::Video.new(
-        song: @songs[:fire],
         id: '1234',
+        song: 'Ed Sheeran - I See Fire',
         thumbnail: 'www.web.site.com',
         length: 10
       )
@@ -53,33 +49,31 @@ describe Radioactive::Library do
         end
       ).to eq 1
     end
-
-    it 'cannot add the same video twice' do
-      @library.add(@videos[:fire])
-      expect do
-        @library.add(@videos[:fire])
-      end.to raise_error "Video '#{@videos[:fire].id}' is already added"
-    end
   end
 
   describe '#find' do
-    it 'can find a video by a song' do
-      @library.add(@videos[:fire])
-      expect(
-        @library.find(song: @songs[:fire])
-      ).to eq @videos[:fire]
-    end
-
     it 'can find a video by id' do
       @library.add(@videos[:fire])
       expect(
-        @library.find(id: @videos[:fire].id)
+        @library.find(@videos[:fire].id)
+      ).to eq @videos[:fire]
+    end
+
+    it 'loads it from youtube if not present' do
+      allow(@library).to receive(:find_in_youtube) do
+        @videos[:fire]
+      end
+      expect(
+        @library.find(@videos[:fire].id)
       ).to eq @videos[:fire]
     end
 
     it 'returns nil if nothing is found' do
+      allow(@library).to receive(:find_in_youtube) do
+        nil
+      end
       expect(
-        @library.find(id: @videos[:fire].id)
+        @library.find(@videos[:fire].id)
       ).to eq nil
     end
   end

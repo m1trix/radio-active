@@ -1,4 +1,5 @@
 require 'radioactive/database'
+require 'mock/logger_mock'
 
 module Radioactive
   class Database

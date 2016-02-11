@@ -1,5 +1,6 @@
 require 'radioactive/database'
-require 'radioactive/song'
+require 'radioactive/library'
+require 'radioactive/youtube'
 
 module Radioactive
   class RelatedSongs
@@ -13,8 +14,8 @@ module Radioactive
       def table
         <<-SQL
           CREATE TABLE IF NOT EXISTS #{TABLE} (
-            #{COLUMN_SONG} VARCHAR(256),
-            #{COLUMN_LINK} VARCHAR(256),
+            #{COLUMN_SONG} VARCHAR(128),
+            #{COLUMN_LINK} VARCHAR(128),
             PRIMARY KEY(#{COLUMN_SONG}, #{COLUMN_LINK})
           )
         SQL
@@ -63,15 +64,14 @@ module Radioactive
     end
 
     def list(song)
-      @db.select(SQL.list(song), []) do |row|
-        handle do |result|
-          result.push(Song.new(row[SQL::COLUMN_LINK]))
-        end
+      related = read_from_db(song)
 
-        error do
-          raise Error, 'Failed to read related songs'
-        end
+      if related.empty?
+        related = YouTube.proxy.related(song)
+        insert(song, related)
       end
+
+      related
     end
 
     def insert(song, related_songs)
@@ -88,6 +88,20 @@ module Radioactive
       @db.execute(SQL.delete(song)) do
         error do
           raise Error, 'Failed to delete related songs'
+        end
+      end
+    end
+
+    private
+
+    def read_from_db(song)
+      @db.select(SQL.list(song), []) do |row|
+        handle do |result|
+          result.push(row[SQL::COLUMN_LINK])
+        end
+
+        error do
+          raise Error, 'Failed to read related songs'
         end
       end
     end

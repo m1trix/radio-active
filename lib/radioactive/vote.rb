@@ -1,6 +1,6 @@
 require 'radioactive/exception'
 require 'radioactive/database'
-require 'radioactive/song'
+require 'radioactive/video'
 
 module Radioactive
   class VotingError < Error
@@ -13,7 +13,7 @@ module Radioactive
       TABLE = 'VOTES'
       COLUMN_CYCLE = 'CYCLE'
       COLUMN_USER = 'USERNAME'
-      COLUMN_SONG = 'SONG'
+      COLUMN_SONG = Video::SQL.column(:id)
 
       module_function
 
@@ -21,9 +21,9 @@ module Radioactive
         <<-SQL
           CREATE TABLE IF NOT EXISTS #{TABLE}
           (
-            #{COLUMN_CYCLE} DATETIME,
+            #{COLUMN_CYCLE} BIGINT,
             #{COLUMN_USER} VARCHAR(32),
-            #{COLUMN_SONG} VARCHAR(256),
+            #{Video::SQL::type(:id)},
             PRIMARY KEY (#{COLUMN_CYCLE}, #{COLUMN_USER})
           )
         SQL
@@ -33,7 +33,7 @@ module Radioactive
         <<-SQL
           INSERT INTO #{TABLE}
           (#{COLUMN_CYCLE}, #{COLUMN_USER}, #{COLUMN_SONG})
-            VALUES ('#{cycle}', '#{user}', '#{song}')
+            VALUES (#{cycle}, '#{user}', '#{song}')
         SQL
       end
 
@@ -41,7 +41,7 @@ module Radioactive
         <<-SQL
           SELECT #{COLUMN_SONG}
             FROM #{TABLE}
-            WHERE #{COLUMN_CYCLE}='#{cycle}'
+            WHERE #{COLUMN_CYCLE}=#{cycle}
         SQL
       end
     end
@@ -64,7 +64,6 @@ module Radioactive
     end
 
     def vote(user, song)
-      puts "VOTING HAPPENS with user #{user} and song #{song}......."
       @db.execute(SQL.vote(@cycle, user, song)) do
         error :duplicate_key do
           raise VotingError, "User '#{user}' has already voted"
@@ -98,7 +97,7 @@ module Radioactive
     def load_votes
       @votes = @db.select(SQL.load(@cycle), {}) do |row|
         handle do |votes|
-          song = Song.new(row[SQL::COLUMN_SONG])
+          song = row[SQL::COLUMN_SONG]
           votes[song] = votes.fetch(song, 0) + 1
           votes
         end
