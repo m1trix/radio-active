@@ -35,4 +35,5 @@ build/
 .rvmrc
 bindings.yaml
 Gemfile.lock
+*.log
 lor

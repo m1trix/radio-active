@@ -14,12 +14,12 @@ module Radioactive
       module_function
 
       def json_to_video(json)
-        Video.new(**{
+        Video.new(
           length: 0,
-          id: json['id']['videoId'],
+          id: json['id']['videoId'] || json['id'],
           song: Song.new(json['snippet']['title']),
-          thumbnail: json['snippet']['thumbnails']['default']
-        })
+          thumbnail: json['snippet']['thumbnails']['default']['url']
+        )
       end
     end
   end
@@ -66,8 +66,8 @@ module Radioactive
 
       def assert_no_error(request, description)
         code = request.code
-        unless (200...300).include? code
-          message = "Request for '#{description}' failed with code #{code}"
+        unless (200...300).include? code.to_i
+          message = "Request for '#{description}' failed with status #{code}"
           raise YouTubeError, message
         end
       end
@@ -91,9 +91,20 @@ module Radioactive
         convert(JSON.parse(related))
       end
 
-      def convert(songs_json)
-        songs_json['items'].map do |json|
-          Convert.json_to_video(json)
+      def find(video_id)
+        video = call(
+          description: "find \"#{video_id}\"",
+          relative_url: 'videos',
+          parameters: [
+            'part=snippet',
+            "id=#{video_id}"
+          ])
+        convert(JSON.parse(video))[0]
+      end
+
+      def convert(json)
+        json['items'].map do |item|
+          Convert.json_to_video(item)
         end
       end
     end

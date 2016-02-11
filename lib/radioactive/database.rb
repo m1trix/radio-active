@@ -1,5 +1,6 @@
-require 'radioactive/exception'
 require 'dbi'
+require 'radioactive/logger'
+require 'radioactive/exception'
 
 module Radioactive
   class DatabaseError < Error
@@ -133,12 +134,18 @@ module Radioactive
         apply(&block) if @handle == :success
       end
 
+      def cancel
+        @ongoing = :cancel
+        @handle = :none
+      end
+
       def on_error(error)
         @handle = :error
         @error = error
+        Logger.new.error(@error.message)
 
         instance_eval(&@block) if @block
-        raise error
+        raise error unless @ongoing == :cancel
       end
 
       def on_success(row)

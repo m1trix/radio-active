@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>radio::active - [You]Tube radio</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+    <script type="text/javascript" src="engine.js"></script>
+</head>
+
+<body>
+     <div id="player">
+        <iframe type="text/html"
+                width="640" 
+                height="390"
+                src="http://www.youtube.com/embed/<%= video %>?autoplay=1&controls=0">
+        </iframe>
+    </div>
+
+    <div id="upnext">
+    <% related.each do |related| %>
+        <div id="<%= related.id %>"class="upnext" onclick="vote(this)">
+            <img src="<%= related.thumbnail %>" /><br/>
+            <%= related.song.to_s %>
+        </div>
+    <% end %>
+    </div>
+
+    <form action="/logout" method="POST">
+        <input class="button" id="logout" type="submit" value="Logout">
+    </form>
+</body>
+
+</html>

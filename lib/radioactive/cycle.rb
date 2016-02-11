@@ -1,7 +1,7 @@
 module Radioactive
   class Cycle
-    def initialize
-      @time = Time.new
+    def initialize(time = nil)
+      @time = (time or Time.new)
     end
 
     def to_s

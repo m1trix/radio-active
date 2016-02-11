@@ -1,6 +1,6 @@
 require 'yaml'
 
-tests = ['song', 'database', 'access', 'queue', 'youtube', 'vote']
+tests = ['song', 'database', 'access', 'queue', 'youtube', 'vote', 'library']
 
 desc 'Run all tests'
 task :tests do

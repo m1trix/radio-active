@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>radio::active - <%= title %></title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+</head>
+
+<body>
+    <div class="text"><%= message %></div>
+    <br>
+    <table>
+        <tr>
+            <td><div class="text">Redirecting...</div></td>
+            <td><div id="timer" class="link">3</div></td>
+        </tr>
+    </table>
+
+    <script type="text/javascript">
+        timer = function(time) {
+            if (time === 0) {
+                window.location.href = '<%= redirect %>';
+            }
+            document.getElementById("timer").innerHTML = time;
+
+            setTimeout(function() {
+                timer(time - 1);
+            }, 1000);
+        };
+        timer(3);
+    </script>
+</body>
+
+</html>

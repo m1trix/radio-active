@@ -3,6 +3,11 @@ require 'radioactive/database'
 require 'radioactive/song'
 
 module Radioactive
+  class VotingError < Error
+  end
+end
+
+module Radioactive
   class VotingSystem
     module SQL
       TABLE = 'VOTES'
@@ -24,19 +29,19 @@ module Radioactive
         SQL
       end
 
-      def vote
+      def vote(cycle, user, song)
         <<-SQL
           INSERT INTO #{TABLE}
           (#{COLUMN_CYCLE}, #{COLUMN_USER}, #{COLUMN_SONG})
-            VALUES ('%{cycle}', '%{user}', '%{song}')
+            VALUES ('#{cycle}', '#{user}', '#{song}')
         SQL
       end
 
-      def load
+      def load(cycle)
         <<-SQL
           SELECT #{COLUMN_SONG}
             FROM #{TABLE}
-            WHERE #{COLUMN_CYCLE}='%{cycle}'
+            WHERE #{COLUMN_CYCLE}='#{cycle}'
         SQL
       end
     end
@@ -50,18 +55,19 @@ module Radioactive
       @cycle = cycle
 
       @db = Database.new
-      initialize_tables
+      @db.execute(SQL.table) do
+        error do
+          raise Error, 'Failed to initialize voting system'
+        end
+      end
       load_votes
     end
 
     def vote(user, song)
-      sql = SQL.vote % {
-        cycle: @cycle, user: user, song: song.to_s
-      }
-
-      @db.execute(sql) do
+      puts "VOTING HAPPENS with user #{user} and song #{song}......."
+      @db.execute(SQL.vote(@cycle, user, song)) do
         error :duplicate_key do
-          raise Error, "User '#{user}' has already voted"
+          raise VotingError, "User '#{user}' has already voted"
         end
 
         error do
@@ -90,7 +96,7 @@ module Radioactive
     private
 
     def load_votes
-      @votes = @db.select(SQL.load % { cycle: @cycle }, {}) do |row|
+      @votes = @db.select(SQL.load(@cycle), {}) do |row|
         handle do |votes|
           song = Song.new(row[SQL::COLUMN_SONG])
           votes[song] = votes.fetch(song, 0) + 1
@@ -99,14 +105,6 @@ module Radioactive
 
         error do
           raise Error, 'Failed to load persisted votes'
-        end
-      end
-    end
-
-    def initialize_tables
-      @db.execute(SQL.table) do
-        error do
-          raise Error, 'Failed to initialize voting system'
         end
       end
     end

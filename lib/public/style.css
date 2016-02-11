@@ -1,0 +1,91 @@
+body {
+    background-color: #111;
+}
+
+#logout {
+    position: fixed;
+    z-index: 10;
+}
+
+#player {
+    background-color: #222;
+    position: fixed;
+    width: 100%;
+    padding: 0px;
+    top: 0px;
+    left: 0px;
+    border: 0px;
+    border-collapse: collapse;
+    text-align: center;
+}
+
+#player iframe {
+    border: 0px;
+    border-collapse: collapse;
+}
+
+#upnext {
+    position:absolute;
+    bottom: 0px;
+    left: 0px;
+    padding: 4px;
+    display: flex;
+    background-color: #333;
+}
+
+.upnext {
+    margin: 0px;
+    padding: 4px;
+    color: #ddd;
+    font: 12px 'Verdana';
+    text-shadow: 1px 1px 0px #111;
+}
+
+.upnext:hover {
+    cursor: pointer;
+    background-color: #111;
+}
+
+.text {
+    font: 12px 'Verdana';
+    color: #ddd;
+}
+
+.button {
+    border: 2px solid #ddd;
+    background-color: #800;
+    color: #ddd;
+    font: 12px 'Verdana';
+    padding: 8px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.button:hover {
+    cursor: pointer;
+    background-color: #b00;
+}
+
+.input {
+    border: 1px solid #ddd;
+    padding: 8px;
+    background-color: #222;
+    color: #ddd;
+}
+
+.dialog {
+    text-align: center;
+    margin: 32px;
+}
+
+.link {
+    color: #b00;
+    text-decoration: none;
+    font: 12px 'Verdana';
+    font-weight: bold;
+}
+
+.link:hover {
+    cursor: pointer;
+    color: #f00;
+}
