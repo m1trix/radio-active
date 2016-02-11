@@ -59,10 +59,12 @@ get '/' do
 end
 
 get '/index.html' do
+  playing = radio.now_playing
   erb :'index.html', locals: {
     related: radio.voting_list.map { |id| library.find(id) },
-    video: library.find(radio.now_playing[:video]),
-    time: radio.now_playing[:time]
+    video: library.find(playing[:video]),
+    time: playing[:time],
+    length: playing[:length]
   }
 end
 

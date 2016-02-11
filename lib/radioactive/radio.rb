@@ -13,14 +13,11 @@ module Radioactive
     end
 
     def run
-      length = Library.new.find(now_playing[:video]).length
       loop do
         begin
-          puts ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> #{now_playing[:time]} #{length}"
-          if now_playing[:time] >= length
-            next_song
-            length = Library.new.find(now_playing[:video]).length
-          end
+          song = now_playing
+          puts ">>> #{song[:time]} : #{song[:length]} <<<"
+          next_song if (song[:time] >= song[:length])
         rescue Exception => e
           Logger.new.error(e.message)
         end
@@ -32,7 +29,8 @@ module Radioactive
       {
         cycle: @services[:cycle].to_i,
         video: @services[:queue].top,
-        time: (Time.now.utc - @services[:cycle].time).to_i
+        time: (Time.now.utc - @services[:cycle].time).to_i,
+        length: Library.new.find(@services[:queue].top).length
       }
     end
 

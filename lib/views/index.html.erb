@@ -30,6 +30,12 @@
     <form action="/logout" method="POST">
         <input class="button" id="logout" type="submit" value="Logout">
     </form>
+
+    <script type="text/javascript">
+        setTimeout(function() {
+            location.reload();
+        }, <%= (length - time) * 1000 %>);
+    </script>
 </body>
 
 </html>
