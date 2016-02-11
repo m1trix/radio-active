@@ -89,10 +89,15 @@ module Radioactive
         votes == sorted.last[1]
       end
 
-      candidates.sample.first
+      select_winner(candidates)
     end
 
     private
+
+    def select_winner(candidates)
+      return nil if candidates.empty?
+      candidates.sample.first
+    end
 
     def load_votes
       @votes = @db.select(SQL.load(@cycle), {}) do |row|

@@ -16,7 +16,7 @@ module Radioactive
       length = Library.new.find(now_playing[:video]).length
       loop do
         begin
-          puts "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< #{now_playing[:time]}"
+          puts ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> #{now_playing[:time]} #{length}"
           if now_playing[:time] >= length
             next_song
             length = Library.new.find(now_playing[:video]).length
@@ -32,7 +32,7 @@ module Radioactive
       {
         cycle: @services[:cycle].to_i,
         video: @services[:queue].top,
-        time: (Time.now() - @services[:cycle].time).to_i
+        time: (Time.now.utc - @services[:cycle].time).to_i
       }
     end
 
@@ -47,11 +47,15 @@ module Radioactive
     end
 
     def next_song
-      @services[:queue].push(@services[:votes].winner)
+      @services[:queue].push(select_winner)
       next_cycle
     end
 
     private
+
+    def select_winner
+      @services[:votes].winner or voting_list.sample
+    end
 
     def create_services(cycle)
       {

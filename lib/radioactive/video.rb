@@ -13,7 +13,7 @@ module Radioactive
       def values(video)
         "('%s', '%s', %d, '%s')" % [
           video.id,
-          video.song.sub(/'/, "''"),
+          video.song.gsub(/'/, "''"),
           video.length,
           video.thumbnail
         ]

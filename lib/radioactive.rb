@@ -47,6 +47,7 @@ end
 
 radio = Radioactive::Radio.new
 enable  :sessions
+set :bind, bindings['ip_address']
 
 before '/index.html' do
   redirect '/login.html' unless session[:user_id]
@@ -59,9 +60,9 @@ end
 
 get '/index.html' do
   erb :'index.html', locals: {
+    related: radio.voting_list.map { |id| library.find(id) },
     video: library.find(radio.now_playing[:video]),
-    time: radio.now_playing[:time],
-    related: radio.voting_list.map { |id| library.find(id) }
+    time: radio.now_playing[:time]
   }
 end
 

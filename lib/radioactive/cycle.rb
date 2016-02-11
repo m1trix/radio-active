@@ -1,6 +1,7 @@
 require 'radioactive/database'
 require 'radioactive/exception'
 require 'radioactive/logger'
+require 'time'
 
 module Radioactive
   class Cycle
@@ -11,11 +12,11 @@ module Radioactive
       initialize_table
 
       @cycle = (cycle or load_cycle or 0)
-      @time = (time or load_time or Time.now())
+      @time = (time or load_time or Time.now.utc)
     end
     
     def next
-      Cycle.new(@cycle + 1, Time.now())
+      Cycle.new(@cycle + 1, Time.now.utc)
     end
 
     def to_s
@@ -90,10 +91,10 @@ module Radioactive
         SQL
       end
 
-      def insert(cycle, time)
+      def insert(cycle, datetime)
         <<-SQL
           INSERT INTO #{TABLE} (#{COLUMN_CYCLE}, #{COLUMN_TIME})
-            VALUES (#{cycle}, '#{time}')
+            VALUES (#{cycle}, '#{datetime}')
         SQL
       end
 
