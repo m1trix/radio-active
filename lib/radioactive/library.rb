@@ -1,7 +1,6 @@
-require 'radioactive/database'
-require 'radioactive/exception'
-require 'radioactive/video'
-require 'radioactive/youtube'
+require_relative 'database'
+require_relative 'error'
+require_relative 'video'
 
 module Radioactive
   class Library
@@ -10,14 +9,22 @@ module Radioactive
 
       module_function
 
-      def table
+      def table_definition
         <<-SQL
           CREATE TABLE IF NOT EXISTS #{TABLE}
           (
-            #{Video::SQL.joined_types},
+            #{Video::SQL.joined_definitions},
             PRIMARY KEY (#{Video::SQL.column(:id)})
           )
         SQL
+      end
+
+      def columns
+        Video::SQL.joined_columns(TABLE)
+      end
+
+      def full_column(name)
+        "#{TABLE}.#{Video::SQL.column(name)}"
       end
 
       def find(id)
@@ -28,7 +35,7 @@ module Radioactive
         SQL
       end
 
-      def insert(video)
+      def add(video)
         <<-SQL
           INSERT INTO #{TABLE}
           (#{Video::SQL.joined_columns})
@@ -42,27 +49,16 @@ module Radioactive
             WHERE #{Video::SQL.column(:id)}='#{id}'
         SQL
       end
-
-      def clear
-        "DELETE FROM #{TABLE}"
-      end
     end
   end
 end
 
 module Radioactive
   class Library
+    Database.initialize_table(self)
+
     def initialize
       @db = Database.new
-      initialize_table
-    end
-
-    def clear
-      @db.execute(SQL.clear) do
-        error do
-          raise Error, 'Failed to clear Library'
-        end
-      end
     end
 
     def add_all(videos)
@@ -72,7 +68,7 @@ module Radioactive
     end
 
     def add(video)
-      @db.execute(SQL.insert(video)) do
+      @db.execute(SQL.add(video)) do
         error :duplicate_key do
           cancel
         end
@@ -84,26 +80,9 @@ module Radioactive
     end
 
     def find(id)
-      video = find_in_db(id)
-
-      if video.nil? and id
-        video = find_in_youtube(id)
-        add(video) if video
-      end
-
-      video
-    end
-
-    private
-
-    def find_in_youtube(id)
-      YouTube.proxy.find(id)
-    end
-
-    def find_in_db(id)
       @db.select(SQL.find(id)) do |row|
         handle do
-          Video::SQL.get(row)
+          Video::SQL.from_row(row)
         end
 
         error do
@@ -112,11 +91,18 @@ module Radioactive
       end
     end
 
-    def initialize_table
-      @db.execute(SQL.table) do
+    def delete(id)
+      @db.execute(SQL.delete(id)) do |row|
         error do
-          raise Error, 'Failed to initialize Library'
+          raise Error, "Failed to delete video '#{id}'"
         end
+      end
+    end
+
+    def update(video)
+      @db.transaction do
+        delete(video.id)
+        add(video)
       end
     end
   end

@@ -1,6 +1,6 @@
-require 'radioactive/exception'
-require 'radioactive/database'
-require 'radioactive/video'
+require_relative 'error'
+require_relative 'database'
+require_relative 'video'
 
 module Radioactive
   class VotingError < Error
@@ -13,11 +13,11 @@ module Radioactive
       TABLE = 'VOTES'
       COLUMN_CYCLE = 'CYCLE'
       COLUMN_USER = 'USERNAME'
-      COLUMN_SONG = Video::SQL.column(:id)
+      COLUMN_ID = Video::SQL.column(:id)
 
       module_function
 
-      def table
+      def table_definition
         <<-SQL
           CREATE TABLE IF NOT EXISTS #{TABLE}
           (
@@ -29,19 +29,19 @@ module Radioactive
         SQL
       end
 
-      def vote(cycle, user, song)
+      def vote(cycle, user, video_id)
         <<-SQL
           INSERT INTO #{TABLE}
-          (#{COLUMN_CYCLE}, #{COLUMN_USER}, #{COLUMN_SONG})
-            VALUES (#{cycle}, '#{user}', '#{song}')
+          (#{COLUMN_CYCLE}, #{COLUMN_USER}, #{COLUMN_ID})
+            VALUES (#{cycle.to_i}, '#{user}', '#{video_id}')
         SQL
       end
 
       def load(cycle)
         <<-SQL
-          SELECT #{COLUMN_SONG}
+          SELECT #{COLUMN_ID}
             FROM #{TABLE}
-            WHERE #{COLUMN_CYCLE}=#{cycle}
+            WHERE #{COLUMN_CYCLE}=#{cycle.to_i}
         SQL
       end
     end
@@ -50,21 +50,14 @@ end
 
 module Radioactive
   class VotingSystem
-    def initialize(cycle)
-      @votes = {}
-      @cycle = cycle
+    Database.initialize_table(self)
 
+    def initialize
       @db = Database.new
-      @db.execute(SQL.table) do
-        error do
-          raise Error, 'Failed to initialize voting system'
-        end
-      end
-      load_votes
     end
 
-    def vote(user, song)
-      @db.execute(SQL.vote(@cycle, user, song)) do
+    def vote(cycle, user, video_id)
+      @db.execute(SQL.vote(cycle, user, video_id)) do
         error :duplicate_key do
           raise VotingError, "User '#{user}' has already voted"
         end
@@ -73,15 +66,10 @@ module Radioactive
           raise Error, 'Voting failed'
         end
       end
-      @votes[song] = votes(song) + 1
     end
 
-    def votes(song)
-      @votes.fetch(song, 0)
-    end
-
-    def winner
-      sorted = @votes.each_pair.sort_by do |song, votes|
+    def winner(cycle)
+      sorted = load_votes(cycle).each_pair.sort_by do |_, votes|
         votes
       end
 
@@ -99,11 +87,11 @@ module Radioactive
       candidates.sample.first
     end
 
-    def load_votes
-      @votes = @db.select(SQL.load(@cycle), {}) do |row|
+    def load_votes(cycle)
+      @votes = @db.select(SQL.load(cycle), {}) do |row|
         handle do |votes|
-          song = row[SQL::COLUMN_SONG]
-          votes[song] = votes.fetch(song, 0) + 1
+          video_id = row[SQL::COLUMN_ID]
+          votes[video_id] = votes.fetch(video_id, 0) + 1
           votes
         end
 

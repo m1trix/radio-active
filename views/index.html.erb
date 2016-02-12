@@ -1,0 +1,26 @@
+<div id="player">
+    <iframe type="text/html"
+            width="640" 
+            height="390"
+            src="http://www.youtube.com/embed/<%= @player.video.id %>?autoplay=1&controls=0&start=<%= @player.elapsed_time %>">
+    </iframe>
+</div>
+
+<div id="upnext">
+<% @player.related.each do |related| %>
+    <div id="<%= related.id %>"class="upnext" onclick="vote(this)">
+        <img src="<%= related.thumbnail %>" /><br/>
+        <%= related.song %>
+    </div>
+<% end %>
+</div>
+
+<form action="/logout" method="POST">
+    <input class="button" id="logout" type="submit" value="Logout">
+</form>
+
+<script type="text/javascript">
+    setTimeout(function() {
+        location.reload();
+    }, <%= [0, (@player.video.length - @player.elapsed_time + 1)].max * 1000 %>);
+</script>

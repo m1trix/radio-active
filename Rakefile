@@ -2,11 +2,12 @@ require 'yaml'
 
 tests = %W(
   database
+  library
+  playlist
+  relations
   access
-  queue
   youtube
   vote
-  library
 )
 
 desc 'Run all tests'
@@ -25,7 +26,7 @@ namespace :test do
   end
 
   task :run, :task_id do |t, name|
-    Rake::Task['test:skeptic'].execute(name)
+    # Rake::Task['test:skeptic'].execute(name)
     Rake::Task['test:spec'].execute(name)
   end
 
@@ -46,7 +47,7 @@ namespace :test do
       --naming-conventions=true
       --no-global-variables=true
       --no-trailing-whitespace=true
-      --english-words-for-names='json sql db username url uri eql youtube'
+      --english-words-for-names='json sql db username url uri eql youtube playlist'
       --spaces-around-operators=true
     ).join(' ')
 

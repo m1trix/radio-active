@@ -1,6 +1,6 @@
 require 'dbi'
-require 'radioactive/logger'
-require 'radioactive/exception'
+require_relative 'logger'
+require_relative 'error'
 
 module Radioactive
   class DatabaseError < Error
@@ -11,7 +11,7 @@ module Radioactive
       @code = -1
 
       if error.is_a?(DBI::DatabaseError)
-        @code = error.err
+        @code = (error.err or -1)
       end
     end
   end
@@ -19,12 +19,34 @@ end
 
 module Radioactive
   class Database
-    DB = {}
+    DB = {
+      driver: 'DBI:Mysql',
+      bound: false
+    }
 
     def self.bind(database:, user:, password:)
-      DB[:driver] = "DBI:Mysql:#{database}"
+      DB[:database] = "#{DB[:driver]}:#{database}"
       DB[:user] = user
       DB[:password] = password
+      DB[:bound] = true
+    end
+
+    def self.initialize_table(classy)
+      new.execute(classy::SQL.table_definition) do
+        error :table_already_exists do
+          cancel # Use the existing table
+        end
+
+        error do
+          raise DatabaseError, "Failed to initialize table for '#{classy}'"
+        end
+      end
+    end
+
+    def initialize
+      unless DB[:bound]
+        raise Error, 'Class Database must be bound before it can be used'
+      end
     end
 
     def transaction
@@ -72,7 +94,7 @@ module Radioactive
 
     def create_connection
       begin
-        @connection = DBI.connect(DB[:driver], DB[:user], DB[:password])
+        @connection = DBI.connect(DB[:database], DB[:user], DB[:password])
         yield @connection
       rescue DBI::Error => e
         raise DatabaseError.new(e)

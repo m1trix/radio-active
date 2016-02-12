@@ -1,23 +1,52 @@
-require 'radioactive/exception'
-require 'radioactive/database'
 require 'digest'
+require_relative 'error'
+require_relative 'database'
+
+module Radioactive
+  class Access
+    module SQL
+      TABLE = 'ACCESS'
+      COLUMN_USER = 'USERNAME'
+      COLUMN_PASS = 'PASSWORD'
+
+      module_function
+
+      def table_definition
+        <<-SQL
+          CREATE TABLE IF NOT EXISTS #{TABLE} (
+            `#{COLUMN_USER}` VARCHAR(32) PRIMARY KEY,
+            `#{COLUMN_PASS}` VARCHAR(128)
+          )
+        SQL
+      end
+
+      def register(user, hash)
+        <<-SQL
+          INSERT INTO #{TABLE} (#{COLUMN_USER}, #{COLUMN_PASS})
+          VALUES ('#{user}', '#{hash}')
+        SQL
+      end
+
+      def check(user)
+        <<-SQL
+          SELECT #{COLUMN_PASS}
+            FROM #{TABLE}
+            WHERE #{COLUMN_USER}='#{user}'
+        SQL
+      end
+    end
+  end
+end
 
 module Radioactive
   class AccessError < Error
   end
 
   class Access
-    TABLE = 'USERS'
-    COLUMN_USER = 'USERNAME'
-    COLUMN_PASS = 'PASSWORD'
+    Database.initialize_table(self)
 
     def initialize
       @db = Database.new
-      @db.execute(SQL.table) do
-        error do
-          raise AccessError, 'Failed to initialize registry service'
-        end
-      end
     end
 
     def register(username, password)
@@ -71,42 +100,6 @@ module Radioactive
     def encrypt(string)
       return '' if string.nil?
       Digest::SHA512.hexdigest string
-    end
-  end
-end
-
-module Radioactive
-  class Access
-    module SQL
-      TABLE = 'ACCESS'
-      COLUMN_USER = 'USERNAME'
-      COLUMN_PASS = 'PASSWORD'
-
-      module_function
-
-      def table
-        <<-SQL
-          CREATE TABLE IF NOT EXISTS #{TABLE} (
-            `#{COLUMN_USER}` VARCHAR(32) PRIMARY KEY,
-            `#{COLUMN_PASS}` VARCHAR(128)
-          )
-        SQL
-      end
-
-      def register(user, hash)
-        <<-SQL
-          INSERT INTO #{TABLE} (#{COLUMN_USER}, #{COLUMN_PASS})
-          VALUES ('#{user}', '#{hash}')
-        SQL
-      end
-
-      def check(user)
-        <<-SQL
-          SELECT #{COLUMN_PASS}
-            FROM #{TABLE}
-            WHERE #{COLUMN_USER}='#{user}'
-        SQL
-      end
     end
   end
 end

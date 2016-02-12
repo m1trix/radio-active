@@ -1,5 +1,5 @@
-require 'radioactive/access'
 require 'mock/database_mock'
+require 'radioactive/access'
 
 describe Radioactive::Access do
   before :each do
@@ -9,7 +9,7 @@ describe Radioactive::Access do
 
   after :each do
     @db.execute <<-SQL
-      DROP TABLE IF EXISTS #{Radioactive::Access::SQL::TABLE}
+      DELETE FROM #{Radioactive::Access::SQL::TABLE}
     SQL
   end
 

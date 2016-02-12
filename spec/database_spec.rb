@@ -1,5 +1,5 @@
-require 'radioactive/database'
 require 'mock/database_mock'
+
 
 describe Radioactive::Database do
   after :each do
@@ -9,19 +9,29 @@ describe Radioactive::Database do
   end
 
   before :each do
+    class Test
+      module SQL
+        module_function
+
+        def table_definition
+          <<-SQL
+            CREATE TABLE TEST (
+              `NAME` VARCHAR(32) PRIMARY KEY,
+              `VALUE` VARCHAR(32)
+            ) ENGINE=InnoDb
+          SQL
+        end
+      end
+    end
+
     @db = Radioactive::Database.new
-    @db.execute <<-SQL
-      CREATE TABLE TEST (
-        `NAME` VARCHAR(32) PRIMARY KEY,
-        `VALUE` VARCHAR(32)
-      ) ENGINE=InnoDB
-    SQL
+    Radioactive::Database.initialize_table Test
   end
 
   describe '::bind' do
     it 'binds the DB parameters to the class' do
       Radioactive::Database.bind(database: 'DB', user: 'USER', password: 'PWD')
-      expect(Radioactive::Database::DB[:driver]).to eq 'DBI:Mysql:DB'
+      expect(Radioactive::Database::DB[:database]).to eq 'DBI:Mysql:DB'
       expect(Radioactive::Database::DB[:user]).to eq 'USER'
       expect(Radioactive::Database::DB[:password]).to eq 'PWD'
 

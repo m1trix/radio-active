@@ -1,24 +1,15 @@
-require 'radioactive/library'
 require 'mock/database_mock'
+require 'radioactive/library'
 
 describe Radioactive::Library do
   before :each do
     @db = Radioactive::Database.new
     @library = Radioactive::Library.new
-
-    @videos = {
-      fire: Radioactive::Video.new(
-        id: '1234',
-        song: 'Ed Sheeran - I See Fire',
-        thumbnail: 'www.web.site.com',
-        length: 10
-      )
-    }
   end
 
   after :each do
     @db.execute <<-SQL
-      DROP TABLE IF EXISTS #{Radioactive::Library::SQL::TABLE}
+      DELETE FROM #{Radioactive::Library::SQL::TABLE}
     SQL
   end
 
@@ -29,68 +20,78 @@ describe Radioactive::Library do
 
     expect(
       @db.select(sql) do |row|
-        handle do
-          row[0]
-        end
+        handle { row[0] }
       end
     ).to eq Radioactive::Library::SQL::TABLE
   end
 
   describe '#add' do
     it 'adds additional videos' do
-      @library.add(@videos[:fire])
+      @library.add($videos[:fire])
+      expect([@db, Radioactive::Library::SQL::TABLE]).to have_rows [
+        [$videos[:fire].id, $videos[:fire].song, $videos[:fire].length]
+      ]
 
-      sql = "SELECT * FROM #{Radioactive::Library::SQL::TABLE}"
-      expect(
-        @db.select(sql, 0) do |row|
-          handle do |count|
-            count + 1
-          end
-        end
-      ).to eq 1
+      @library.add($videos[:hello])
+      expect([@db, Radioactive::Library::SQL::TABLE]).to have_rows [
+        [$videos[:fire].id, $videos[:fire].song, $videos[:fire].length],
+        [$videos[:hello].id, $videos[:hello].song, $videos[:hello].length]
+      ]
+    end
+
+    it 'is fault tolerant in case of a duplicate key' do
+      @library.add($videos[:fire])
+      @library.add($videos[:fire])
+
+      expect([@db, Radioactive::Library::SQL::TABLE]).to have_rows [
+        [$videos[:fire].id, $videos[:fire].song, $videos[:fire].length]
+      ]
+    end
+  end
+
+  describe '#add_all' do
+    it 'adds an array of videos one after the other' do
+      @library.add_all([$videos[:fire], $videos[:hello]])
+
+      expect([@db, Radioactive::Library::SQL::TABLE]).to have_rows [
+        [$videos[:fire].id, $videos[:fire].song, $videos[:fire].length],
+        [$videos[:hello].id, $videos[:hello].song, $videos[:hello].length]
+      ]
+    end
+
+    it 'is fault tolerant in case of a duplicate key' do
+      @library.add_all([$videos[:fire], $videos[:hello], $videos[:fire]])
+
+      expect([@db, Radioactive::Library::SQL::TABLE]).to have_rows [
+        [$videos[:fire].id, $videos[:fire].song, $videos[:fire].length],
+        [$videos[:hello].id, $videos[:hello].song, $videos[:hello].length]
+      ]
     end
   end
 
   describe '#find' do
     it 'can find a video by id' do
-      @library.add(@videos[:fire])
-      expect(
-        @library.find(@videos[:fire].id)
-      ).to eq @videos[:fire]
-    end
-
-    it 'loads it from youtube if not present' do
-      allow(@library).to receive(:find_in_youtube) do
-        @videos[:fire]
-      end
-      expect(
-        @library.find(@videos[:fire].id)
-      ).to eq @videos[:fire]
+      @library.add($videos[:fire])
+      expect(@library.find($videos[:fire].id)).to eq $videos[:fire]
     end
 
     it 'returns nil if nothing is found' do
-      allow(@library).to receive(:find_in_youtube) do
-        nil
-      end
-      expect(
-        @library.find(@videos[:fire].id)
-      ).to eq nil
+      @library.add($videos[:fire])
+      expect(@library.find($videos[:hello].id)).to be_nil
     end
   end
 
-  describe '#clear' do
-    it 'deletes all records' do
-      @library.add(@videos[:fire])
-      @library.clear
+  describe '#delete' do
+    it 'deletes a video by an id' do
+      @library.add_all([$videos[:fire], $videos[:hello]])
+      @library.delete($videos[:fire].id)
+      expect(@library.find($videos[:fire].id)).to be_nil
+      expect(@library.find($videos[:hello].id)).to eq $videos[:hello]
+    end
 
-      sql = "SELECT * FROM #{Radioactive::Library::SQL::TABLE}"
-      expect(
-        @db.select(sql, 0) do |row|
-          handle do |count|
-            count + 1
-          end
-        end
-      ).to eq 0
+    it 'is fault tolerant in case of missing video' do
+      @library.delete($videos[:fire].id)
+      expect(@library.find($videos[:fire].id)).to be_nil
     end
   end
 end

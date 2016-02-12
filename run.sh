@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ ${#} -gt "0" ] && [ "${1}" == 'init' ] ; then
-	ruby lib/radioactive.rb "RDN4awrpPQQ" "QcIy9NiNbmo" "My2FRPA3Gf8"
+	ruby app.rb "RDN4awrpPQQ" "QcIy9NiNbmo" "My2FRPA3Gf8"
 else
-	ruby lib/radioactive.rb
+	ruby app.rb
 fi

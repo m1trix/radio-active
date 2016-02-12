@@ -1,29 +1,52 @@
+require_relative 'database'
+
+module Radioactive
+  class Video
+    attr_reader :id, :song, :length
+
+    def initialize(id:, song:, length:)
+      @id = id
+      @song = song
+      @length = length
+    end
+
+    def to_s
+      @id
+    end
+
+    def ==(other)
+      other.is_a?(Video) and (@id == other.id)
+    end
+
+    def thumbnail
+      "https://i.ytimg.com/vi/#{id}/default.jpg"
+    end
+  end
+end
+
 module Radioactive
   class Video
     module SQL
       COLUMNS = {
         id: 'VARCHAR(32)',
         song: 'VARCHAR(256)',
-        length: 'INTEGER',
-        thumbnail: 'VARCHAR(128)'
+        length: 'INTEGER'
       }
 
       module_function
 
       def values(video)
-        "('%s', '%s', %d, '%s')" % [
+        "('%s', '%s', %d)" % [
           video.id,
           video.song.gsub(/'/, "''"),
           video.length,
-          video.thumbnail
         ]
       end
 
-      def get(row)
+      def from_row(row)
         Video.new(
           id: row[column(:id)],
           song: row[column(:song)],
-          thumbnail: row[column(:thumbnail)],
           length: row[column(:length)]
         )
       end
@@ -38,44 +61,24 @@ module Radioactive
         end
       end
 
-      def joined_columns
-        columns.join(',')
+      def joined_columns(table = nil)
+        return columns.join(',') if table.nil?
+        columns.map { |column| "#{table}.#{column}" }.join(',')
       end
 
       def type(name)
         "`#{column(name)}` #{COLUMNS[name]}"
       end
 
-      def types
+      def definitions
         COLUMNS.each_key.map do |column|
           type(column)
         end
       end
 
-      def joined_types
-        types.join(',')
+      def joined_definitions
+        definitions.join(',')
       end
-    end
-  end
-end
-
-module Radioactive
-  class Video
-    attr_reader :id, :song, :length, :thumbnail
-
-    def initialize(id:, song:, length: 0, thumbnail: '')
-      @id = id
-      @song = song
-      @length = length
-      @thumbnail = thumbnail
-    end
-
-    def to_s
-      @id
-    end
-
-    def ==(other)
-      other.is_a?(Video) and (@id == other.id)
     end
   end
 end

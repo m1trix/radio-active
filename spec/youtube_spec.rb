@@ -74,10 +74,10 @@ describe Radioactive::YouTube do
         end
 
         expect(@proxy.related('1234')).to eq [
-          'hLQl3WQQoQ0',
-          'rYEDA3JcQqw',
-          'DeumyOzKqgI',
-          'QcIy9NiNbmo'
+          Radioactive::Video.new(id: 'hLQl3WQQoQ0', song: 'Adele - Someone Like You', length: 0),
+          Radioactive::Video.new(id: 'rYEDA3JcQqw', song: 'Adele - Rolling in the Deep', length: 0),
+          Radioactive::Video.new(id: 'DeumyOzKqgI', song: 'Adele - Skyfall (Lyric Video)', length: 0),
+          Radioactive::Video.new(id: 'QcIy9NiNbmo', song: 'Taylor Swift - Bad Blood ft. Kendrick Lamar', length: 0)
         ]
       end
     end

@@ -1,7 +1,7 @@
-require 'radioactive/database'
-require 'radioactive/exception'
-require 'radioactive/logger'
 require 'time'
+require_relative 'database'
+require_relative 'error'
+require_relative 'logger'
 
 module Radioactive
   class Cycle

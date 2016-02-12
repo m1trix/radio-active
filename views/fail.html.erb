@@ -2,12 +2,12 @@
 <html>
 
 <head>
-    <title>radio::active - <%= title %></title>
+    <title>radio::active::<%= @title %></title>
     <link rel="stylesheet" type="text/css" href="/style.css">
 </head>
 
 <body>
-    <div class="text"><%= message %></div>
+    <div class="text"><%= @message %></div>
     <br>
     <table>
         <tr>
@@ -19,7 +19,7 @@
     <script type="text/javascript">
         timer = function(time) {
             if (time === 0) {
-                window.location.href = '<%= redirect %>';
+                window.location.href = '<%= @redirect %>';
             }
             document.getElementById("timer").innerHTML = time;
 

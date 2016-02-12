@@ -1,8 +1,8 @@
-require 'radioactive/exception'
-require 'radioactive/logger'
-require 'radioactive/video'
-require 'net/http'
 require 'json'
+require 'net/http'
+require_relative 'error'
+require_relative 'logger'
+require_relative 'video'
 
 module Radioactive
   class YouTubeError < Error
@@ -22,8 +22,7 @@ module Radioactive
         Video.new(
           length: length,
           id: parse_id(json),
-          song: song,
-          thumbnail: json['snippet']['thumbnails']['default']['url']
+          song: song
         )
       end
 
@@ -123,7 +122,7 @@ module Radioactive
             'type=video',
             'maxResults=10'
           ])
-        filter_related(convert(JSON.parse(related), type: :song))
+        filter_related(convert(JSON.parse(related)))
       end
 
       def find(video_id)
@@ -139,11 +138,7 @@ module Radioactive
 
       def convert(json, type: :video)
         json['items'].map do |item|
-          if type == :video
-            Convert.json_to_video(item)
-          else
-            Convert.parse_id(item)
-          end
+          Convert.json_to_video(item)
         end
       end
 
