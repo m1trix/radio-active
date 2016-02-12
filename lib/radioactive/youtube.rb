@@ -1,6 +1,7 @@
 require 'json'
 require 'net/http'
 require_relative 'error'
+require_relative 'filter'
 require_relative 'logger'
 require_relative 'video'
 
@@ -15,14 +16,10 @@ module Radioactive
       module_function
 
       def json_to_video(json)
-        length = parse_length(json)
-        song = parse_song(json)
-        return nil unless song
-
         Video.new(
-          length: length,
+          length: parse_length(json),
           id: parse_id(json),
-          song: song
+          song: parse_song(json)
         )
       end
 
@@ -122,7 +119,7 @@ module Radioactive
             'type=video',
             'maxResults=10'
           ])
-        filter_related(convert(JSON.parse(related)))
+        Filter.new.filter(convert(JSON.parse(related)))
       end
 
       def find(video_id)
@@ -140,10 +137,6 @@ module Radioactive
         json['items'].map do |item|
           Convert.json_to_video(item)
         end
-      end
-
-      def filter_related(songs)
-        songs.select { |song| not song.nil? }
       end
     end
   end

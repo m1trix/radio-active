@@ -8,6 +8,7 @@ tests = %W(
   access
   youtube
   vote
+  filter
 )
 
 desc 'Run all tests'
