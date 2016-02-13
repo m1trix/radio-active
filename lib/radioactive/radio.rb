@@ -8,7 +8,8 @@ require_relative 'vote'
 
 module Radioactive
   class Radio
-    Player = Struct.new(:video, :elapsed_time, :related)
+    class Player < Struct.new(:video, :elapsed_time, :related)
+    end
   end
 end
 
@@ -29,24 +30,22 @@ module Radioactive
       Player.new(@video, elapsed_time, @related)
     end
 
-    def vote(username, song)
-      @votes.vote(@cycle, username, song)
+    def vote(username, video_id)
+      index = @related.index do |video|
+        video.id == video_id
+      end
+
+      unless index
+        raise VotingError, 'The video id is not in the list'
+      end
+
+      @votes.vote(@cycle, username, video_id)
     end
 
     def run
       Thread.new do
         while true
-          begin
-            puts ">>> #{elapsed_time} : #{@video.length} <<<"
-            if (elapsed_time >= @video.length)
-              puts "Switching cycles"
-              next_cycle
-            end
-          rescue Exception => e
-            Logger.new.error(e.message)
-            Logger.new.error(e.backtrace.join("\n"))
-          end
-          sleep 1
+          playlist
         end
       end
     end
@@ -78,9 +77,27 @@ module Radioactive
 
     def prepare_cycle
       @video = @playlist.list(@cycle, 1)[0]
-      @related = @playlist.list(@cycle, QUEUE_SIZE).reduce([]) do |related, video|
-        related.concat(@relations.list(video))
+      @related = @playlist.list(@cycle, QUEUE_SIZE).reduce([]) do |r, v|
+        r.concat(@relations.list(v))
       end
+
+      @related.uniq! do |video|
+        video.id
+      end
+    end
+
+    def playlist
+      begin
+        puts ">>> #{elapsed_time} : #{@video.length} <<<"
+        if (elapsed_time >= @video.length)
+          puts "Switching cycles"
+          next_cycle
+        end
+      rescue Exception => e
+        Logger.new.error(e.message)
+        Logger.new.error(e.backtrace.join("\n"))
+      end
+      sleep 1
     end
   end
 end
